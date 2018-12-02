@@ -43,11 +43,11 @@ not :math:`h_{pnd}`. Conserved quantities are thus computed according to
 the tracer dependencies (weights), which are tracked using the arrays
 ``trcr_depend`` (indicates dependency on area, ice volume or snow volume),
 ``trcr_base`` (a dependency mask), ``n_trcr_strata`` (the number of
-underlying tracer layers), and ``nt_strata`` (indicies of underlying layers). 
-See **icedrv\_state.F90 and icepack\_tracers.F90**.
+underlying tracer layers), and ``nt_strata`` (indices of underlying layers). 
+See subroutine *icepack_compute_tracers* in **icepack\_tracers.F90**.
 
 To add a tracer, follow these steps using one of the existing tracers as
-a pattern (.e.g age).
+a pattern (e.g. age).
 
 #. **icedrv\_domain\_size.F90**: increase ``max_ntrcr`` (can also add option
    to **icepack.settings** and **icepack.build**)
@@ -56,7 +56,8 @@ a pattern (.e.g age).
 
    -  declare ``nt_[tracer]`` and ``tr_[tracer]`` 
 
-   -  add flags and indices to the init, query and write subroutines
+   -  add flags and indices to the init, query and write subroutines, and
+      call these routines as needed throughout the code
 
 #. **icepack\_[tracer].F90**: create physics routines
 
@@ -73,9 +74,7 @@ a pattern (.e.g age).
 
    -  increment number of tracers in use based on namelist input (``ntrcr``)
 
-   -  define tracer dependencies (``trcr_depend`` = 0 for ice area tracers, 1 for
-      ice volume, 2 for snow volume, 2+``nt_[tracer]`` for dependence on
-      other tracers)
+   -  define tracer dependencies
 
 #. **icedrv\_step\_mod.F90** (and elsewhere as needed):
 
@@ -88,7 +87,9 @@ a pattern (.e.g age).
    -  call routines to read, write tracer restart data
 
 #. **icepack\_in**: add namelist variables to *tracer\_nml* and
-   *icefields\_nml*
+   *icefields\_nml*.  Best practice is to set the namelist values so that the 
+   new capability is turned off, and create an option file with your preferred
+   configuration in **configuration/scripts/options**.
 
 #. If strict conservation is necessary, add diagnostics as noted for
    topo ponds in Section :ref:`ponds`

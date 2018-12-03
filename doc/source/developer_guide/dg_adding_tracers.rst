@@ -26,8 +26,9 @@ age, first-year ice area, melt pond area and volume, brine height,
 aerosols, and level ice area and volume (from which ridged ice
 quantities are derived). Salinity, enthalpies, age, aerosols, level-ice
 volume, brine height and most melt pond quantities are volume-weighted
-tracers, while first-year area, pond area, level-ice area and all of the
-biogeochemistry tracers in this release are area-weighted tracers. In
+tracers, while first-year area, pond area, and level-ice area are area-weighted 
+tracers. Biogeochemistry tracers in the skeletal layer are area-weighted,
+and vertical biogeochemistry tracers are volume-weighted.  In
 the absence of sources and sinks, the total mass of a volume-weighted
 tracer such as aerosol (kg) is conserved under transport in horizontal
 and thickness space (the mass in a given grid cell will change), whereas

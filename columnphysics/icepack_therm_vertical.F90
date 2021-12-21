@@ -511,7 +511,7 @@
                                         strocnxT, strocnyT, &
                                         Tbot,     fbot,     &
                                         rside,    Cdn_ocn,  &
-                                        fside)
+                                        fside,    floediameter)
 
       integer (kind=int_kind), intent(in) :: &
          ncat  , & ! number of thickness categories
@@ -529,7 +529,8 @@
          ustar_min,& ! minimum friction velocity for ice-ocean heat flux
          Cdn_ocn , & ! ocean-ice neutral drag coefficient
          strocnxT, & ! ice-ocean stress, x-direction
-         strocnyT    ! ice-ocean stress, y-direction
+         strocnyT, & ! ice-ocean stress, y-direction
+         floediameter! single floe diameter in grid cell (m)
 
       character (char_len), intent(in) :: &
          fbot_xfer_type  ! transfer coefficient type for ice-ocean heat flux
@@ -589,7 +590,8 @@
       fbot  = c0
       wlat  = c0
 
-      if (aice > puny .and. frzmlt < c0) then ! ice can melt
+!      if (aice > puny .and. frzmlt < c0) then ! ice can melt
+      if (aice > c0 .and. frzmlt < c0) then ! ice can melt
          
       !-----------------------------------------------------------------
       ! Use boundary layer theory for fbot.
@@ -624,8 +626,14 @@
       !-----------------------------------------------------------------
 
          wlat = m1 * deltaT**m2 ! Maykut & Perovich
-         rside = wlat*dt*pi/(floeshape*floediam) ! Steele
+!         rside = wlat*dt*pi/(floeshape*floediam) ! Steele
+         rside = wlat*dt*pi/(floeshape*floediameter) ! Steele
          rside = max(c0,min(rside,c1))
+
+!if (floediameter < floediam) then
+!   print*,'floe diameter ',floediameter, aice
+!   rside = c1
+!endif
 
       !-----------------------------------------------------------------
       ! Compute heat flux associated with this value of rside.
@@ -656,7 +664,14 @@
             endif
             
          enddo                     ! n
-         
+
+!if (floediameter < floediam) then
+!   print*,'floe diameter ',floediameter, aice
+!   print*,'frzmlt, fbot ',frzmlt, fbot
+!   print*,'fside ',fside, min(fside, frzmlt - fbot)
+!   fside = min(fside, frzmlt - fbot)
+!endif
+
       !-----------------------------------------------------------------
       ! Limit bottom and lateral heat fluxes if necessary.
       !-----------------------------------------------------------------
@@ -761,6 +776,8 @@
       hsn    = vsnon / aicen
       hilyr    = hin / real(nilyr,kind=dbl_kind)
       hslyr    = hsn / rnslyr
+
+if (hin < 0.01_dbl_kind) print*,'thermo hin ', hin,vicen,aicen
 
       !-----------------------------------------------------------------
       ! Snow enthalpy and maximum allowed snow temperature
@@ -2206,7 +2223,7 @@
                                     lmask_n     , lmask_s     , &
                                     mlt_onset   , frz_onset   , &
                                     yday        , prescribed_ice, &
-                                    zlvs)
+                                    floediameter, zlvs)
 
       integer (kind=int_kind), intent(in) :: &
          ncat    , & ! number of thickness categories
@@ -2326,6 +2343,7 @@
          HDO_ocn     , & ! ocean concentration of HDO (kg/kg)
          H2_16O_ocn  , & ! ocean concentration of H2_16O (kg/kg)
          H2_18O_ocn  , & ! ocean concentration of H2_18O (kg/kg)
+         floediameter, & ! single floe diameter in grid cell (m)
          zlvs            ! atm level height for scalars (if different than zlvl) (m)
 
       real (kind=dbl_kind), dimension(:), intent(inout) :: &
@@ -2445,6 +2463,7 @@
          l_smliq         ! tracer for mass of liquid in snow (kg/m^3)
 
       real (kind=dbl_kind)  :: &
+         l_diameter  , & ! single floe diameter (m)
          l_fsloss    , & ! rate of snow loss to leads (kg/m^2/s)
          l_meltsliq  , & ! mass of snow melt (kg/m^2)
          l_HDO_ocn   , & ! local ocean concentration of HDO (kg/kg)
@@ -2530,6 +2549,9 @@
 
       l_fsloss     = c0
       if (present(fsloss)    ) l_fsloss     = fsloss
+
+      l_diameter   = c0
+      if (present(floediameter)  ) l_diameter   = floediameter
 
       l_HDO_ocn    = c0
       if (present(HDO_ocn)   ) l_HDO_ocn    = HDO_ocn
@@ -2666,7 +2688,7 @@
                                   strocnxT,  strocnyT,  &
                                   Tbot,      fbot,      &
                                   rside,     Cdn_ocn,   &
-                                  fside)
+                                  fside,     l_diameter)
 
       if (icepack_warnings_aborted(subname)) return
 

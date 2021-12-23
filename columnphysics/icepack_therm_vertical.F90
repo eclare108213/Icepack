@@ -591,6 +591,7 @@
       wlat  = c0
 
 !      if (aice > puny .and. frzmlt < c0) then ! ice can melt
+!echmod - should change answers but does not in gx3 1-year test - why not?
       if (aice > c0 .and. frzmlt < c0) then ! ice can melt
          
       !-----------------------------------------------------------------
@@ -627,6 +628,7 @@
 
          wlat = m1 * deltaT**m2 ! Maykut & Perovich
 !         rside = wlat*dt*pi/(floeshape*floediam) ! Steele
+!echmod - iresidual
          rside = wlat*dt*pi/(floeshape*floediameter) ! Steele
          rside = max(c0,min(rside,c1))
 
@@ -664,13 +666,6 @@
             endif
             
          enddo                     ! n
-
-!if (floediameter < floediam) then
-!   print*,'floe diameter ',floediameter, aice
-!   print*,'frzmlt, fbot ',frzmlt, fbot
-!   print*,'fside ',fside, min(fside, frzmlt - fbot)
-!   fside = min(fside, frzmlt - fbot)
-!endif
 
       !-----------------------------------------------------------------
       ! Limit bottom and lateral heat fluxes if necessary.
@@ -776,8 +771,6 @@
       hsn    = vsnon / aicen
       hilyr    = hin / real(nilyr,kind=dbl_kind)
       hslyr    = hsn / rnslyr
-
-if (hin < 0.01_dbl_kind) print*,'thermo hin ', hin,vicen,aicen
 
       !-----------------------------------------------------------------
       ! Snow enthalpy and maximum allowed snow temperature
@@ -2550,7 +2543,7 @@ if (hin < 0.01_dbl_kind) print*,'thermo hin ', hin,vicen,aicen
       l_fsloss     = c0
       if (present(fsloss)    ) l_fsloss     = fsloss
 
-      l_diameter   = c0
+      l_diameter   = floediam
       if (present(floediameter)  ) l_diameter   = floediameter
 
       l_HDO_ocn    = c0

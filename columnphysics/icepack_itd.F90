@@ -772,7 +772,8 @@
                               fsalt,       fhocn,      &
                               faero_ocn,   fiso_ocn,   &
                               fzsal,                   &
-                              flux_bio,    limit_aice_in)
+                              flux_bio,    limit_aice_in, &
+                              a_limit)
 
       integer (kind=int_kind), intent(in) :: & 
          ncat  , & ! number of thickness categories
@@ -783,9 +784,9 @@
          nbtrcr, & ! number of bio tracers in use
          n_aero    ! number of aerosol tracers
  
-      real (kind=dbl_kind), intent(in) :: & 
+      real (kind=dbl_kind), intent(in) :: &
          dt        ! time step 
- 
+
       real (kind=dbl_kind), dimension(0:ncat), intent(in) :: &
          hin_max   ! category boundaries (m)
 
@@ -818,7 +819,10 @@
          heat_capacity   ! if false, ice and snow have zero heat capacity
 
       logical (kind=log_kind), dimension(ncat), intent(inout) :: &
-         first_ice   ! For bgc and S tracers. set to true if zapping ice.
+         first_ice    ! For bgc and S tracers. set to true if zapping ice.
+
+      real (kind=dbl_kind), intent(in), optional :: &
+         a_limit      ! lower bound for aice
 
       ! ice-ocean fluxes (required for strict conservation)
 
@@ -849,6 +853,7 @@
          it           ! tracer index
 
       real (kind=dbl_kind) &
+         l_limit  , & ! lower limit for aice
          dfpond   , & ! zapped pond water flux (kg/m^2/s)
          dfresh   , & ! zapped fresh water flux (kg/m^2/s)
          dfsalt   , & ! zapped salt flux   (kg/m^2/s)
@@ -938,6 +943,8 @@
       !-----------------------------------------------------------------
 
       if (limit_aice) then
+         l_limit = puny
+         if (present(a_limit)) l_limit = a_limit
          call zap_small_areas (dt,           ntrcr,         &
                                ncat,                        &         
                                n_aero,                      &
@@ -953,7 +960,8 @@
                                tr_aero,                     &
                                tr_pond_topo,                &
                                first_ice,    nbtrcr,        &
-                               dfzsal,       dflux_bio      )
+                               dfzsal,       dflux_bio,     &
+                               l_limit)
 
          if (icepack_warnings_aborted(subname)) then
             write(warnstr,*) subname, 'aice:', aice
@@ -1049,7 +1057,8 @@
                                   tr_aero,                 &
                                   tr_pond_topo, &
                                   first_ice, nbtrcr,       &
-                                  dfzsal,    dflux_bio     )
+                                  dfzsal,    dflux_bio,    &
+                                  l_limit)
 
       integer (kind=int_kind), intent(in) :: &
          ncat     , & ! number of thickness categories
@@ -1061,7 +1070,8 @@
          nbtrcr       ! number of biology tracers
 
       real (kind=dbl_kind), intent(in) :: &
-         dt           ! time step
+         dt       , & ! time step
+         l_limit      ! lower limit for aice
 
       real (kind=dbl_kind), intent(inout) :: &
          aice     , & ! total ice concentration
@@ -1104,16 +1114,21 @@
          n, k, it, & !counting indices
          blevels
 
-      real (kind=dbl_kind) :: xtmp      ! temporary variables
-      real (kind=dbl_kind) , dimension (1):: trcr_skl    
-      real (kind=dbl_kind) , dimension (nblyr+1):: bvol     
+      real (kind=dbl_kind) :: xtmp, atmp               ! temporary variables
+      real (kind=dbl_kind), dimension (1):: trcr_skl   ! bgc skl tracers
+      real (kind=dbl_kind), dimension (nblyr+1):: bvol ! bgc temporary
 
-      character(len=*),parameter :: subname='(zap_small_areas)'
+      character(len=*), parameter :: subname='(zap_small_areas)'
 
       !-----------------------------------------------------------------
       ! I. Zap categories with very small areas.
       !-----------------------------------------------------------------
       dfzsal = c0
+
+      atmp = puny
+      if (aice < l_limit) then ! zap all categories
+         atmp = max(puny,maxval(aicen))
+      endif
       
       do n = 1, ncat
 
@@ -1126,7 +1141,7 @@
             call icepack_warnings_add(subname//' Zap ice: negative ice area')
             return
          elseif (abs(aicen(n)) /= c0 .and. &
-                 abs(aicen(n)) <= puny) then
+                 abs(aicen(n)) <= atmp) then
 
       !-----------------------------------------------------------------
       ! Account for tracers important for conservation

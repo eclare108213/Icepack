@@ -36,7 +36,7 @@
       use icepack_kinds
       use icepack_parameters,  only: c0, c1, c2, c10, c25, Cf, Cp, Pstar, Cstar
       use icepack_parameters,  only: p05, p15, p25, p333, p5
-      use icepack_parameters,  only: puny, Lfresh, rhoi, rhos
+      use icepack_parameters,  only: puny, Lfresh, rhoi, rhos, a_limit
 
       use icepack_parameters, only: kstrength, krdg_partic, krdg_redist, mu_rdg
       use icepack_parameters, only: heat_capacity, conserv_check
@@ -1896,6 +1896,12 @@
       !  categories with very small areas.
       !-----------------------------------------------------------------
 
+!echmod tmp
+if (1==0) then ! changes the answers - implement namelist option
+!if (1==1) then
+a_limit = 1.d-8
+endif
+
       dtt = dt * ndtd  ! for proper averaging over thermo timestep
       call cleanup_itd (dtt,                  ntrcr,            &
                         nilyr,                nslyr,            &
@@ -1913,8 +1919,8 @@
                         fpond,                fresh,            &
                         fsalt,                fhocn,            &
                         faero_ocn,            l_fiso_ocn,       &
-                        fzsal,            &
-                        flux_bio)
+                        fzsal,                flux_bio,         &
+                        a_limit=a_limit)
       if (icepack_warnings_aborted(subname)) return
 
       if (present(fiso_ocn)) fiso_ocn = l_fiso_ocn

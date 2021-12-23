@@ -59,9 +59,10 @@
          spval_const= -1.0e36_dbl_kind
 
       real (kind=dbl_kind), public :: &
-         secday = 86400.0_dbl_kind ,&! seconds in calendar day
-         puny   = 1.0e-11_dbl_kind, &
-         bignum = 1.0e+30_dbl_kind, &
+         secday = 86400.0_dbl_kind ,& ! seconds in calendar day
+         puny   = 1.0e-11_dbl_kind, & ! multi-purpose small number
+         a_limit= 1.0e-11_dbl_kind, & ! lower bound for aice
+         bignum = 1.0e+30_dbl_kind, & ! multi-purpose big number
          pi     = 3.14159265358979323846_dbl_kind
 
       !-----------------------------------------------------------------
@@ -426,10 +427,11 @@
 ! subroutine to set the column package internal parameters
 
       subroutine icepack_init_parameters(   &
-         puny_in, bignum_in, pi_in, secday_in, &
+         puny_in, a_limit_in, bignum_in, pi_in, secday_in, &
          rhos_in, rhoi_in, rhow_in, cp_air_in, emissivity_in, &
          cp_ice_in, cp_ocn_in, hfrazilmin_in, floediam_in, &
-         depressT_in, dragio_in, thickness_ocn_layer1_in, iceruf_ocn_in, albocn_in, gravit_in, viscosity_dyn_in, &
+         depressT_in, dragio_in, thickness_ocn_layer1_in, iceruf_ocn_in, &
+         albocn_in, gravit_in, viscosity_dyn_in, &
          Tocnfrz_in, rhofresh_in, zvir_in, vonkar_in, cp_wv_in, &
          stefan_boltzmann_in, ice_ref_salinity_in, &
          Tffresh_in, Lsub_in, Lvap_in, Timelt_in, Tsmelt_in, &
@@ -475,9 +477,10 @@
       !-----------------------------------------------------------------
 
       real (kind=dbl_kind), intent(in), optional :: &
-         secday_in,     & !
-         puny_in,       & !
-         bignum_in,     & !
+         secday_in,     & ! seconds in calendar day
+         puny_in,       & ! multi-purpose small number
+         a_limit_in,    & ! lower bound for aice
+         bignum_in,     & ! multi-purpose big number
          pi_in            !
 
       !-----------------------------------------------------------------
@@ -869,6 +872,7 @@
       if (present(qqqocn_in)            ) qqqocn           = qqqocn_in
       if (present(TTTocn_in)            ) TTTocn           = TTTocn_in
       if (present(puny_in)              ) puny             = puny_in
+      if (present(a_limit_in)           ) a_limit          = a_limit_in
       if (present(bignum_in)            ) bignum           = bignum_in
       if (present(pi_in)                ) pi               = pi_in
       if (present(secday_in)            ) secday           = secday_in
@@ -1092,7 +1096,7 @@
 ! subroutine to query the column package internal parameters
 
       subroutine icepack_query_parameters(   &
-         puny_out, bignum_out, pi_out, rad_to_deg_out,&
+         puny_out, a_limit_out, bignum_out, pi_out, rad_to_deg_out,&
          secday_out, c0_out, c1_out, c1p5_out, c2_out, c3_out, c4_out, &
          c5_out, c6_out, c8_out, c10_out, c15_out, c16_out, c20_out, &
          c25_out, c100_out, c180_out, c1000_out, p001_out, p01_out, p1_out, &
@@ -1153,6 +1157,7 @@
          p333_out, p666_out, spval_const_out, pih_out, piq_out, pi2_out, &
          secday_out,     & ! number of seconds per day
          puny_out,       & ! a small number
+         a_limit_out,    & ! lower bound for aice
          bignum_out,     & ! a big number
          pi_out,         & ! pi
          rad_to_deg_out, & ! conversion factor from radians to degrees
@@ -1490,6 +1495,7 @@
       character(len=*),parameter :: subname='(icepack_query_parameters)'
 
       if (present(puny_out)              ) puny_out         = puny
+      if (present(a_limit_out)           ) a_limit_out      = a_limit
       if (present(bignum_out)            ) bignum_out       = bignum
       if (present(pi_out)                ) pi_out           = pi
 
@@ -1589,6 +1595,7 @@
       if (present(qqqocn_out)            ) qqqocn_out       = qqqocn
       if (present(TTTocn_out)            ) TTTocn_out       = TTTocn
       if (present(puny_out)              ) puny_out         = puny
+      if (present(a_limit_out)           ) a_limit_out      = a_limit
       if (present(bignum_out)            ) bignum_out       = bignum
       if (present(pi_out)                ) pi_out           = pi
       if (present(secday_out)            ) secday_out       = secday
@@ -1786,6 +1793,7 @@
         write(iounit,*) "  qqqocn = ",qqqocn
         write(iounit,*) "  TTTocn = ",TTTocn
         write(iounit,*) "  puny   = ",puny
+        write(iounit,*) "  a_limit= ",a_limit
         write(iounit,*) "  bignum = ",bignum
         write(iounit,*) "  secday = ",secday
         write(iounit,*) "  pi     = ",pi

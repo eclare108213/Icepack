@@ -50,7 +50,7 @@
 #ifdef UNDEPRECATE_0LAYER
       use icepack_parameters, only: z_tracers, skl_bgc, calc_tsfc, shortwave, kalg, heat_capacity
 #else
-      use icepack_parameters, only: z_tracers, skl_bgc, calc_tsfc, shortwave, kalg
+      use icepack_parameters, only: z_tracers, skl_bgc, calc_tsfc, shortwave, kalg, use_snicar
 #endif
       use icepack_parameters, only: r_ice, r_pnd, r_snw, dt_mlt, rsnw_mlt, hs0, hs1, hp1
       use icepack_parameters, only: pndaspect, albedo_type, albicev, albicei, albsnowv, albsnowi, ahmax
@@ -70,7 +70,6 @@
       use icepack_zbgc_shared,only: R_chl2N, F_abs_chl
       use icepack_zbgc_shared,only: remap_zbgc
       use icepack_orbital, only: compute_coszen
-
 
       implicit none
 
@@ -830,6 +829,7 @@
                           dhsn,     ffracn,    &
                           rsnow,               &
                           l_print_point,       &
+                          l_use_snicar,        &
                           initonly)
 
       integer (kind=int_kind), intent(in) :: &
@@ -868,11 +868,10 @@
          gaer_bc_3bd    ! aerosol asymmetry parameter (cos(theta))
 
       real (kind=dbl_kind), dimension(:,:,:), intent(in) :: & ! Modal aerosol treatment
-         bcenh_3bd          ! BC absorption enhancement factor
+         bcenh_3bd      ! BC absorption enhancement factor
 
-!echmod      logical (kind=log_kind), intent(in), optional :: &
-      logical (kind=log_kind) :: &
-         use_snicar               ! .true. use 5-band SNICAR-AD approach
+      logical (kind=log_kind), intent(in) :: &
+         l_use_snicar   ! .true. use 5-band SNICAR-AD approach
 
 !echmod      real (kind=dbl_kind), dimension(:,:), intent(in) :: &
       real (kind=dbl_kind), dimension(nspint_5bd,1471) :: &
@@ -1022,8 +1021,8 @@
       character(len=*),parameter :: subname='(run_dEdd)'
 
 !echmod - temporary, for testing
-         use_snicar = .false.
-!         use_snicar = .true.
+!         l_use_snicar = .false.
+!         l_use_snicar = .true.
          asm_prm_ice_drc      = 0.90 ! snow asymmetry factor (cos(theta))
          asm_prm_ice_dfs      = 0.89 ! snow asymmetry factor (cos(theta))
          ss_alb_ice_drc       = 0.95 ! snow single scatter albedo (fraction)
@@ -1031,7 +1030,6 @@
          ext_cff_mss_ice_drc  = 2.00 ! snow mass extinction cross section (m2/kg)
          ext_cff_mss_ice_dfs  = 1.50 ! snow mass extinction cross section (m2/kg)
 !echmod end
-
 
       allocate(l_fswthrun_vdr(ncat))
       allocate(l_fswthrun_vdf(ncat))
@@ -1252,7 +1250,7 @@
                              albpnd=albpndn(n),             &
                              fswpenl=fswpenln(:,n),         &
                              zbio=trcrn_bgcsw(:,n),         &
-                             use_snicar=use_snicar,         &
+                             l_use_snicar=l_use_snicar,     &
 !echmod add _5bd
                              l_print_point=l_print_point)
 
@@ -1343,7 +1341,7 @@
                                   albsno,   albpnd,      &
                                   fswpenl,  zbio,        &
                                   l_print_point,         &
-                                  use_snicar,            &
+                                  l_use_snicar,          &
                                   asm_prm_ice_drc,       &
                                   asm_prm_ice_dfs,       &
                                   ss_alb_ice_drc,        &
@@ -1383,12 +1381,11 @@
          bcenh_3bd      ! BC absorption enhancement factor
 
       logical (kind=log_kind), intent(in), optional :: &
-         use_snicar               ! .true. use 5-band SNICAR-AD approach
+         l_use_snicar             ! .true. use 5-band SNICAR-AD approach
 
       ! SNICAR snow grain single-scattering properties (SSP) for
       ! direct (drc) and diffuse (dfs) shortwave incidents
        real (kind=dbl_kind), dimension(:,:), intent(in), optional :: &
-!      real (kind=dbl_kind), dimension(5,1471) :: &
          asm_prm_ice_drc      , & ! snow asymmetry factor (cos(theta))
          asm_prm_ice_dfs      , & ! snow asymmetry factor (cos(theta))
          ss_alb_ice_drc       , & ! snow single scatter albedo (fraction)
@@ -1599,7 +1596,8 @@
                       fswthru_idr,                                      &
                       fswthru_idf,                                      &
                       Sswabs,                                           &
-                      Iswabs,    fswpenl)
+                      Iswabs,    fswpenl,                               &
+                      l_use_snicar)
                if (icepack_warnings_aborted(subname)) return
 
                alvdr   = alvdr   + avdrl *fi
@@ -1622,7 +1620,7 @@
                ! calculate snow covered sea ice
 
                srftyp = 1
-               if (use_snicar) then
+               if (l_use_snicar) then
                   nspint = nspint_5bd
                   call compute_dEdd(nilyr,       nslyr,   nspint,       &
                       klev,      klevp,       zbio,    dEdd_algae,      &
@@ -1646,7 +1644,8 @@
                       fswthru_idr,                                      &
                       fswthru_idf,                                      &
                       Sswabs,                                           &
-                      Iswabs,    fswpenl)
+                      Iswabs,    fswpenl,                               &
+                      l_use_snicar)
                else
                   nspint = nspint_3bd
                   call compute_dEdd(nilyr,       nslyr,   nspint,       &
@@ -1671,7 +1670,8 @@
                       fswthru_idr,                                      &
                       fswthru_idf,                                      &
                       Sswabs,                                           &
-                      Iswabs,    fswpenl)
+                      Iswabs,    fswpenl,                               &
+                      l_use_snicar)
                endif
                if (icepack_warnings_aborted(subname)) return
 
@@ -1723,7 +1723,8 @@
                       fswthru_idr,                                      &
                       fswthru_idf,                                      &
                       Sswabs,                                           &
-                      Iswabs,    fswpenl)
+                      Iswabs,    fswpenl,                               &
+                      l_use_snicar)
                if (icepack_warnings_aborted(subname)) return
 
                alvdr   = alvdr   + avdrl *fp
@@ -1863,7 +1864,7 @@
                                fswthru_idf,             &
                                Sswabs,                  &
                                Iswabs,   fswpenl,       &
-                    use_snicar, &
+                    l_use_snicar, &
                     asm_prm_ice_drc, asm_prm_ice_dfs,                 &
                     ss_alb_ice_drc, ss_alb_ice_dfs,                   &
                     ext_cff_mss_ice_drc, ext_cff_mss_ice_dfs)
@@ -1947,8 +1948,8 @@
          Sswabs  , & ! SW absorbed in snow layer (W m-2)
          Iswabs      ! SW absorbed in ice layer (W m-2)
 
-      logical (kind=log_kind), intent(in), optional :: &
-         use_snicar               ! .true. use 5-band SNICAR-AD approach
+      logical (kind=log_kind), intent(in) :: &
+         l_use_snicar               ! .true. use 5-band SNICAR-AD approach
 
       ! SNICAR snow grain single-scattering properties (SSP) for
       ! direct (drc) and diffuse (dfs) shortwave incidents
@@ -2416,9 +2417,6 @@
                          !chlorophyll mass extinction cross section (m^2/mg chla)
 
       ! SNICAR inputs
-      logical (kind=log_kind) :: &
-         l_use_snicar             ! local value for use_snicar
-
       integer (kind=int_kind), parameter :: &
          nmbrad_snicar   = 1471, & ! number of snow grain radii in SNICAR snow iops table
          rsnw_snicar_max = 1500, &
@@ -2486,9 +2484,6 @@
                             .94_dbl_kind, .94_dbl_kind /)
 
       character(len=*),parameter :: subname='(compute_dEdd)'
-
-      l_use_snicar = .false.
-      if (present(use_snicar)) l_use_snicar = .true.
 
 !-----------------------------------------------------------------------
 ! Initialize and tune bare ice/ponded ice iops
@@ -4718,8 +4713,8 @@
          endif
 
          if (calc_Tsfc) then
-         if (trim(shortwave) == 'dEdd') then ! delta Eddington
-
+         if (trim(shortwave(1:4)) == 'dEdd') then ! delta Eddington
+            
             call run_dEdd(dt,           ncat,           &
                           dEdd_algae,                   &
                           nilyr,        nslyr,          &
@@ -4768,12 +4763,12 @@
                           snowfracn=snowfracn,          &
                           dhsn=dhsn,                    &
                           ffracn=ffracn,                &
-                          rsnow=l_rsnow,                  &
+                          rsnow=l_rsnow,                &
                           l_print_point=l_print_point,  &
+                          l_use_snicar=use_snicar,      &
                           initonly=linitonly)
             if (icepack_warnings_aborted(subname)) return
-
-         elseif (trim(shortwave) == 'ccsm3') then
+         elseif (trim(shortwave(1:4)) == 'ccsm') then
 
             call shortwave_ccsm3(aicen,      vicen,      &
                                  vsnon,                  &

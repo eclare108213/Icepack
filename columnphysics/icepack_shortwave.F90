@@ -4892,7 +4892,7 @@
 
          if (calc_Tsfc) then
          if (trim(shortwave(1:4)) == 'dEdd') then ! delta Eddington
-            
+
             call run_dEdd(dt,           ncat,           &
                           dEdd_algae,                   &
                           nilyr,        nslyr,          &

@@ -1038,13 +1038,20 @@
 
       subroutine data_dEdd_5band
 
+      use icepack_snicardata, only: icepack_snicardata_table
+
       ! local variables
 
       integer (kind=int_kind) :: n
 
       character (len=*),parameter :: subname='(data_dEdd_5band)'
 
-      ! if snw_ssp_table = 'snicar'
+      ! if snw_ssp_table = 'snicar_from_file'
+      ! best-fit parameters are read from a table (netcdf)
+      !   1471 snow grain radii
+      !   5 spectral intervals
+
+      ! if snw_ssp_table = 'snicardata_table'
       ! best-fit parameters are read from a table (netcdf)
       !   1471 snow grain radii
       !   5 spectral intervals
@@ -1058,7 +1065,7 @@
       ! if snw_ssp_table = 'file'
       ! all data has to be passed into icepack_parameters
 
-      if (trim(snw_ssp_table) == 'snicar') then
+      if (trim(snw_ssp_table) == 'snicar_from_file') then
          ! table passed in, hardwired 1471 x 5 table with 10/8/6/30/1500 expected
          nmbrad_snicar   = 1471 ! snow grain radius number SNICAR SSP tables
          nmodal1_snicar  = 10   ! nModal1 in SNICAR SSP tables
@@ -1073,6 +1080,11 @@
          do n = 1, nmbrad_snicar-1
             rsnw_snicar_tab(n+1) = rsnw_snicar_tab(n) + c1
          enddo
+
+      elseif (trim(snw_ssp_table) == 'snicardata_table') then
+
+         call icepack_snicardata_table(nmbrad_snicar, nmodal1_snicar, nmodal2_snicar, nmaeros_snicar)
+         if (icepack_warnings_aborted(subname)) return
 
       elseif (trim(snw_ssp_table) == 'file') then
          ! table passed in, table lookup + interpolate, not yet supported
@@ -1238,13 +1250,13 @@
       call icepack_warnings_add(warnstr)
       write(warnstr,'(2a,i8)') subname, ' nmaeros_snicar = ',nmaeros_snicar
       call icepack_warnings_add(warnstr)
-      write(warnstr,'(2a,i5,a,i5,a,g14.7)') subname, ' ssp_snwextdr(',1,         ',',1,            ') = ',ssp_snwextdr(1,1)
+      write(warnstr,'(2a,i5,a,i5,a,g22.15)') subname, ' ssp_snwextdr(',1,         ',',1,            ') = ',ssp_snwextdr(1,1)
       call icepack_warnings_add(warnstr)
-      write(warnstr,'(2a,i5,a,i5,a,g14.7)') subname, ' ssp_snwextdr(',nspint_5bd,',',1,            ') = ',ssp_snwextdr(nspint_5bd,1)
+      write(warnstr,'(2a,i5,a,i5,a,g22.15)') subname, ' ssp_snwextdr(',nspint_5bd,',',1,            ') = ',ssp_snwextdr(nspint_5bd,1)
       call icepack_warnings_add(warnstr)
-      write(warnstr,'(2a,i5,a,i5,a,g14.7)') subname, ' ssp_snwextdr(',1,         ',',nmbrad_snicar,') = ',ssp_snwextdr(1,nmbrad_snicar)
+      write(warnstr,'(2a,i5,a,i5,a,g22.15)') subname, ' ssp_snwextdr(',1,         ',',nmbrad_snicar,') = ',ssp_snwextdr(1,nmbrad_snicar)
       call icepack_warnings_add(warnstr)
-      write(warnstr,'(2a,i5,a,i5,a,g14.7)') subname, ' ssp_snwextdr(',nspint_5bd,',',nmbrad_snicar,') = ',ssp_snwextdr(nspint_5bd,nmbrad_snicar)
+      write(warnstr,'(2a,i5,a,i5,a,g22.15)') subname, ' ssp_snwextdr(',nspint_5bd,',',nmbrad_snicar,') = ',ssp_snwextdr(nspint_5bd,nmbrad_snicar)
       call icepack_warnings_add(warnstr)
 
       ! 5-bands ice surface scattering layer (ssl) iops to match SNICAR calculations
@@ -3106,7 +3118,7 @@
                      ks  = ssp_snwextdr(ns,nmbrad_snicar)
                      ws  = ssp_snwalbdr(ns,nmbrad_snicar)
                      gs  = ssp_sasymmdr(ns,nmbrad_snicar)
-                  elseif (trim(snw_ssp_table) == 'snicar') then ! assume index = int(snow grain radius) - 29
+                  elseif (snw_ssp_table(1:6) == 'snicar') then ! assume index = int(snow grain radius) - 29
                      if (ceiling(rsnw(ksnow)) - rsnw(ksnow) < 1.0e-3_dbl_kind) then
                         nr = ceiling(rsnw(ksnow)) - 30 + 1
                         ks  = ssp_snwextdr(ns,nr)
@@ -3160,7 +3172,7 @@
                      ks  = ssp_snwextdf(ns,nmbrad_snicar)
                      ws  = ssp_snwalbdf(ns,nmbrad_snicar)
                      gs  = ssp_sasymmdf(ns,nmbrad_snicar)
-                  elseif (trim(snw_ssp_table) == 'snicar') then ! assume index = int(snow grain radius) - 29
+                  elseif (snw_ssp_table(1:6) == 'snicar') then ! assume index = int(snow grain radius) - 29
                      if (ceiling(rsnw(ksnow)) - rsnw(ksnow) < 1.0e-3_dbl_kind) then
                         nr = ceiling(rsnw(ksnow)) - 30 + 1
                         ks  = ssp_snwextdf(ns,nr)

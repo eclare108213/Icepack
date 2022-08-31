@@ -1,5 +1,5 @@
   shortwave          = 'dEdd_snicar'
-  snw_ssp_table      = 'snicar'
+  snw_ssp_table      = 'snicar_from_file'
   ssp_filename       = 'ICE_MACHINE_INPUTDATA/CICE_data/forcing/snicar_optics_5bnd_snow_and_aerosols.nc'
   ssp_nsrad_fname    = 'nSnowGrainRadiusSNICAR'
   ssp_nspint_fname   = 'nSpectralIntervalsSNICAR'

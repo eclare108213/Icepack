@@ -20,6 +20,7 @@
         nilyr     = NICELYR   , & ! number of ice layers per category
         nslyr     = NSNWLYR   , & ! number of snow layers per category
         n_iso     = NTRISO    , & ! number of isotopes in use
+        n_fluff   = NTRFLUFF  , & ! number of fluffballs in use
         n_aero    = NTRAERO   , & ! number of aerosols in use
         n_zaero   = TRZAERO   , & ! number of z aerosols in use
         n_algae   = TRALG     , & ! number of algae in use
@@ -49,6 +50,7 @@
                   + TRPND*3     & ! ponds
                   + TRSNOW*4*nslyr & ! snow redistribution/metamorphism
                   + n_iso*2     & ! number of isotopes (in ice and snow)
+                  + n_fluff     & ! number of fluffballs in ice
                   + n_aero*4    & ! number of aerosols * 4 aero layers
                   + TRBRI       & ! brine height
                   + TRBGCS*n_bgc           & ! skeletal layer BGC

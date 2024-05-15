@@ -29,6 +29,7 @@
           write_restart_snow,      read_restart_snow, &
           write_restart_fsd,       read_restart_fsd, &
           write_restart_iso,       read_restart_iso, &
+          write_restart_fluff,     read_restart_fluff, &
           write_restart_aero,      read_restart_aero
 
       character (len=3), private :: nchar !
@@ -70,7 +71,7 @@
 
       use icedrv_calendar, only: sec, month, mday, nyr, istep1
       use icedrv_calendar, only: time, time_forc, year_init
-      use icedrv_domain_size, only: nilyr, nslyr, ncat, n_aero, nfsd, nx, n_iso
+      use icedrv_domain_size, only: nilyr, nslyr, ncat, n_aero, nfsd, nx, n_iso, n_fluff
       use icedrv_forcing, only: oceanmixed_ice
       use icedrv_flux, only: scale_factor, swvdr, swvdf, swidr, swidf
       use icedrv_flux, only: sst, frzmlt, frz_onset, fsnow
@@ -88,7 +89,7 @@
          nt_Tsfc, nt_sice, nt_qice, nt_qsno
 
       logical (kind=log_kind) :: &
-         tr_iage, tr_FY, tr_lvl, tr_iso, tr_aero, tr_brine, &
+         tr_iage, tr_FY, tr_lvl, tr_iso, tr_fluff, tr_aero, tr_brine, &
          tr_pond_topo, tr_pond_lvl, tr_snow, tr_fsd
 !         skl_bgc, z_tracers
 
@@ -114,7 +115,7 @@
          nt_qice_out=nt_qice, nt_qsno_out=nt_qsno)
 
      call icepack_query_tracer_flags(tr_iage_out=tr_iage, tr_FY_out=tr_FY, &
-          tr_lvl_out=tr_lvl, tr_aero_out=tr_aero, tr_iso_out=tr_iso, &
+          tr_lvl_out=tr_lvl, tr_aero_out=tr_aero, tr_iso_out=tr_iso, tr_fluff_out=tr_fluff, &
           tr_brine_out=tr_brine, &
           tr_pond_topo_out=tr_pond_topo, &
           tr_pond_lvl_out=tr_pond_lvl,tr_snow_out=tr_snow,tr_fsd_out=tr_fsd)
@@ -221,6 +222,7 @@
       if (tr_pond_topo) call write_restart_pond_topo(dims) ! topographic melt ponds
       if (tr_snow)      call write_restart_snow(dims)      ! snow metamorphosis tracers
       if (tr_iso)       call write_restart_iso(dims)       ! ice isotopes
+      if (tr_fluff)     call write_restart_fluff(dims)     ! ice fluffballs
       if (tr_aero)      call write_restart_aero(dims)      ! ice aerosols
       if (tr_brine)     call write_restart_hbrine(dims)    ! brine height
       if (tr_fsd)       call write_restart_fsd(dims)       ! floe size distribution
@@ -249,7 +251,7 @@
       use icedrv_calendar, only: istep0, istep1, time, time_forc
       use icepack_intfc, only: icepack_aggregate
       use icedrv_domain_size, only: nilyr, nslyr, ncat, nfsd, nblyr
-      use icedrv_domain_size, only: max_ntrcr, nx, n_iso, n_aero
+      use icedrv_domain_size, only: max_ntrcr, nx, n_iso, n_fluff, n_aero
       use icedrv_flux, only: swvdr, swvdf, swidr, swidf, Tf
       use icedrv_flux, only: sst, frzmlt, scale_factor
       use icedrv_flux, only: frz_onset,fsnow
@@ -274,7 +276,7 @@
          nt_Tsfc, nt_sice, nt_qice, nt_qsno
 
       logical (kind=log_kind) :: &
-         tr_iage, tr_FY, tr_lvl, tr_iso, tr_aero, tr_brine, &
+         tr_iage, tr_FY, tr_lvl, tr_iso, tr_fluff, tr_aero, tr_brine, &
          tr_pond_topo, tr_pond_lvl, tr_snow, tr_fsd
 
       character(len=char_len_long) :: filename
@@ -289,7 +291,7 @@
           nt_qice_out=nt_qice, nt_qsno_out=nt_qsno)
 
       call icepack_query_tracer_flags(tr_iage_out=tr_iage, tr_FY_out=tr_FY, &
-           tr_lvl_out=tr_lvl, tr_aero_out=tr_aero, tr_iso_out=tr_iso, &
+           tr_lvl_out=tr_lvl, tr_aero_out=tr_aero, tr_iso_out=tr_iso, tr_fluff_out=tr_fluff, &
            tr_brine_out=tr_brine, &
            tr_pond_topo_out=tr_pond_topo, &
            tr_pond_lvl_out=tr_pond_lvl,tr_snow_out=tr_snow,tr_fsd_out=tr_fsd)
@@ -396,6 +398,7 @@
       if (tr_pond_topo) call read_restart_pond_topo() ! topographic melt ponds
       if (tr_snow)      call read_restart_snow()      ! snow metamorphosis tracers
       if (tr_iso)       call read_restart_iso()       ! ice isotopes
+      if (tr_fluff)     call read_restart_fluff()     ! ice fluffballs
       if (tr_aero)      call read_restart_aero()      ! ice aerosols
       if (tr_brine)     call read_restart_hbrine      ! brine height
       if (tr_fsd)       call read_restart_fsd()       ! floe size distribution
@@ -765,6 +768,54 @@
       call read_restart_field(nu_restart,trcrn(:,nt_iage,:),ncat,'iage')
 
       end subroutine read_restart_age
+
+!=======================================================================
+
+! Dumps all values needed for restarting
+! author Elizabeth C. Hunke, LANL
+
+      subroutine write_restart_fluff(dims)
+
+      use icedrv_state, only: trcrn
+      use icedrv_domain_size, only: ncat
+
+      integer (kind=int_kind), intent(in), optional :: &
+         dims(:)           ! netcdf dimension IDs
+
+      integer (kind=int_kind) :: nt_fluff
+      character(len=*), parameter :: subname='(write_restart_fluff)'
+
+      call icepack_query_tracer_indices(nt_fluff_out=nt_fluff)
+      call icepack_warnings_flush(nu_diag)
+      if (icepack_warnings_aborted()) call icedrv_system_abort(string=subname, &
+          file=__FILE__,line= __LINE__)
+
+      call write_restart_field(nu_dump,trcrn(:,nt_fluff,:),ncat,'fluff',dims)
+
+      end subroutine write_restart_fluff
+
+!=======================================================================
+
+! Reads all values needed for an ice age restart
+! author Elizabeth C. Hunke, LANL
+
+      subroutine read_restart_fluff()
+
+      use icedrv_state, only: trcrn
+      use icedrv_domain_size, only: ncat
+      integer (kind=int_kind) :: nt_fluff
+      character(len=*), parameter :: subname='(read_restart_fluff)'
+
+      write(nu_diag,*) 'min/max fluffballs (s)'
+
+      call icepack_query_tracer_indices(nt_fluff_out=nt_fluff)
+      call icepack_warnings_flush(nu_diag)
+      if (icepack_warnings_aborted()) call icedrv_system_abort(string=subname, &
+          file=__FILE__,line= __LINE__)
+
+      call read_restart_field(nu_restart,trcrn(:,nt_fluff,:),ncat,'fluff')
+
+      end subroutine read_restart_fluff
 
 !=======================================================================
 

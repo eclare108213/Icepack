@@ -34,10 +34,10 @@
       use icepack_tracers, only: ntrcr, nbtrcr
       use icepack_tracers, only: nt_qice, nt_qsno, nt_fbri, nt_sice
       use icepack_tracers, only: nt_apnd, nt_hpnd, nt_aero, nt_isosno, nt_isoice
-      use icepack_tracers, only: nt_Tsfc, nt_iage, nt_FY, nt_fsd, nt_rhos, nt_sice
+      use icepack_tracers, only: nt_Tsfc, nt_fluff, nt_iage, nt_FY, nt_fsd, nt_rhos, nt_sice
       use icepack_tracers, only: nt_alvl, nt_vlvl
       use icepack_tracers, only: tr_pond_lvl, tr_pond_topo
-      use icepack_tracers, only: tr_iage, tr_FY, tr_lvl, tr_aero, tr_iso, tr_brine, tr_fsd
+      use icepack_tracers, only: tr_iage, tr_fluff, tr_FY, tr_lvl, tr_aero, tr_iso, tr_brine, tr_fsd
       use icepack_tracers, only: n_aero, n_iso
       use icepack_tracers, only: bio_index
 
@@ -1734,6 +1734,11 @@
                 trcrn(nt_iage,n) = &
                (trcrn(nt_iage,n)*vicen(n) + dt*vsurp) / vtmp
 
+!           Perhaps there is no fluffballs from the ocean?
+!           if (tr_fluff .and. vtmp > puny) &
+!               trcrn(nt_fluff,n) = &
+!              (trcrn(nt_fluff,n)*vicen(n) + dt*vsurp) / vtmp
+
             if (tr_lvl .and. vicen(n) > puny) then
                 trcrn(nt_vlvl,n) = &
                (trcrn(nt_vlvl,n)*vicen(n) + &
@@ -1860,6 +1865,10 @@
          if (vicen(n) > puny) then
             if (tr_iage) &
                trcrn(nt_iage,n) = (trcrn(nt_iage,n)*vice1 + dt*vin0new(n))/vicen(n)
+
+!           Perhaps there are no fluffballs in new ice?
+!           if (tr_fluff) &
+!              trcrn(nt_fluff,n) = (trcrn(nt_fluff,n)*vice1 + dt*vin0new(n))/vicen(n)
 
             if (tr_aero) then
                do it = 1, n_aero

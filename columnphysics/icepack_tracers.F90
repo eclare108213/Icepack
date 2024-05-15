@@ -31,6 +31,7 @@
       !-----------------------------------------------------------------
       integer (kind=int_kind), parameter, public :: &
          max_iso    =   3       , & ! maximum number of isotopes
+         max_fluff  =   1       , & ! maximum number of fluffball tracers
          max_algae  =   3       , & ! maximum number of algal types
          max_dic    =   1       , & ! maximum number of dissolved inorganic carbon types
          max_doc    =   3       , & ! maximum number of dissolved organic carbon types
@@ -58,6 +59,7 @@
          nblyr        = 0, & ! number of bio/brine layers per category
          nfsd         = 0, & ! number of fsd layers
          n_iso        = 0, & ! number of isotopes in use
+         n_fluff      = 0, & ! number of fluffball tracers in use
          n_aero       = 0, & ! number of aerosols in use
          n_zaero      = 0, & ! number of z aerosols in use
          n_algae      = 0, & ! number of algae in use
@@ -87,6 +89,7 @@
          nt_rsnw      = 0, & ! snow grain radius
          nt_isosno    = 0, & ! starting index for isotopes in snow
          nt_isoice    = 0, & ! starting index for isotopes in ice
+         nt_fluff     = 0, & ! starting index for fluffballs in ice
          nt_aero      = 0, & ! starting index for aerosols in ice
          nt_bgc_Nit   = 0, & ! nutrients
          nt_bgc_Am    = 0, & !
@@ -108,6 +111,7 @@
          tr_pond_topo = .false., & ! if .true., use explicit topography-based ponds
          tr_snow      = .false., & ! if .true., use snow redistribution or metamorphosis tracers
          tr_iso       = .false., & ! if .true., use isotope tracers
+         tr_fluff     = .false., & ! if .true., use fluffball tracers
          tr_aero      = .false., & ! if .true., use aerosol tracers
          tr_brine     = .false., & ! if .true., brine height differs from ice thickness
          tr_fsd       = .false.    ! if .true., use floe size distribution
@@ -208,7 +212,7 @@
       subroutine icepack_init_tracer_flags(&
            tr_iage_in, tr_FY_in, tr_lvl_in, tr_snow_in, &
            tr_pond_in, tr_pond_lvl_in, tr_pond_topo_in, &
-           tr_fsd_in, tr_aero_in, tr_iso_in, tr_brine_in, tr_zaero_in, &
+           tr_fsd_in, tr_aero_in, tr_iso_in, tr_fluff_in, tr_brine_in, tr_zaero_in, &
            tr_bgc_Nit_in, tr_bgc_N_in, tr_bgc_DON_in, tr_bgc_C_in, tr_bgc_chl_in, &
            tr_bgc_Am_in, tr_bgc_Sil_in, tr_bgc_DMS_in, tr_bgc_Fe_in, tr_bgc_hum_in, &
            tr_bgc_PON_in)
@@ -223,6 +227,7 @@
              tr_snow_in      , & ! if .true., use snow redistribution or metamorphosis tracers
              tr_fsd_in       , & ! if .true., use floe size distribution tracers
              tr_iso_in       , & ! if .true., use isotope tracers
+             tr_fluff_in     , & ! if .true., use fluffball tracers
              tr_aero_in      , & ! if .true., use aerosol tracers
              tr_brine_in     , & ! if .true., brine height differs from ice thickness
              tr_zaero_in     , & ! if .true., black carbon is tracers  (n_zaero)
@@ -251,6 +256,7 @@
         if (present(tr_snow_in)   ) tr_snow    = tr_snow_in
         if (present(tr_fsd_in)    ) tr_fsd     = tr_fsd_in
         if (present(tr_iso_in)    ) tr_iso     = tr_iso_in
+        if (present(tr_fluff_in)  ) tr_fluff   = tr_fluff_in
         if (present(tr_aero_in)   ) tr_aero    = tr_aero_in
         if (present(tr_brine_in)  ) tr_brine   = tr_brine_in
         if (present(tr_zaero_in)  ) tr_zaero   = tr_zaero_in
@@ -275,7 +281,7 @@
       subroutine icepack_query_tracer_flags(&
            tr_iage_out, tr_FY_out, tr_lvl_out, tr_snow_out, &
            tr_pond_out, tr_pond_lvl_out, tr_pond_topo_out, &
-           tr_fsd_out, tr_aero_out, tr_iso_out, tr_brine_out, tr_zaero_out, &
+           tr_fsd_out, tr_aero_out, tr_iso_out, tr_fluff_out, tr_brine_out, tr_zaero_out, &
            tr_bgc_Nit_out, tr_bgc_N_out, tr_bgc_DON_out, tr_bgc_C_out, tr_bgc_chl_out, &
            tr_bgc_Am_out, tr_bgc_Sil_out, tr_bgc_DMS_out, tr_bgc_Fe_out, tr_bgc_hum_out, &
            tr_bgc_PON_out)
@@ -290,6 +296,7 @@
              tr_snow_out      , & ! if .true., use snow redistribution or metamorphosis tracers
              tr_fsd_out       , & ! if .true., use floe size distribution
              tr_iso_out       , & ! if .true., use isotope tracers
+             tr_fluff_out     , & ! if .true., use fluffball tracers
              tr_aero_out      , & ! if .true., use aerosol tracers
              tr_brine_out     , & ! if .true., brine height differs from ice thickness
              tr_zaero_out     , & ! if .true., black carbon is tracers  (n_zaero)
@@ -318,6 +325,7 @@
         if (present(tr_snow_out)   ) tr_snow_out    = tr_snow
         if (present(tr_fsd_out)    ) tr_fsd_out     = tr_fsd
         if (present(tr_iso_out)    ) tr_iso_out     = tr_iso
+        if (present(tr_fluff_out)  ) tr_fluff_out   = tr_fluff
         if (present(tr_aero_out)   ) tr_aero_out    = tr_aero
         if (present(tr_brine_out)  ) tr_brine_out   = tr_brine
         if (present(tr_zaero_out)  ) tr_zaero_out   = tr_zaero
@@ -357,6 +365,7 @@
         write(iounit,*) "  tr_snow    = ",tr_snow
         write(iounit,*) "  tr_fsd     = ",tr_fsd
         write(iounit,*) "  tr_iso     = ",tr_iso
+        write(iounit,*) "  tr_fluff   = ",tr_fluff
         write(iounit,*) "  tr_aero    = ",tr_aero
         write(iounit,*) "  tr_brine   = ",tr_brine
         write(iounit,*) "  tr_zaero   = ",tr_zaero
@@ -383,7 +392,7 @@
            nt_fbri_in, nt_iage_in, nt_FY_in, &
            nt_alvl_in, nt_vlvl_in, nt_apnd_in, nt_hpnd_in, nt_ipnd_in, &
            nt_smice_in, nt_smliq_in, nt_rhos_in, nt_rsnw_in, &
-           nt_fsd_in, nt_isosno_in, nt_isoice_in, &
+           nt_fsd_in, nt_isosno_in, nt_isoice_in, nt_fluff_in, &
            nt_aero_in, nt_zaero_in, nt_bgc_C_in, &
            nt_bgc_N_in, nt_bgc_chl_in, nt_bgc_DOC_in, nt_bgc_DON_in, &
            nt_bgc_DIC_in, nt_bgc_Fed_in, nt_bgc_Fep_in, nt_bgc_Nit_in, nt_bgc_Am_in, &
@@ -417,6 +426,7 @@
              nt_isosno_in,  & ! starting index for isotopes in snow
              nt_isoice_in,  & ! starting index for isotopes in ice
              nt_aero_in,    & ! starting index for aerosols in ice
+             nt_fluff_in,   & ! starting index for fluffballs in ice
              nt_bgc_Nit_in, & ! nutrients
              nt_bgc_Am_in,  & !
              nt_bgc_Sil_in, & !
@@ -497,6 +507,7 @@
         if (present(nt_rsnw_in)      ) nt_rsnw       = nt_rsnw_in
         if (present(nt_isosno_in)    ) nt_isosno     = nt_isosno_in
         if (present(nt_isoice_in)    ) nt_isoice     = nt_isoice_in
+        if (present(nt_fluff_in)     ) nt_fluff      = nt_fluff_in
         if (present(nt_aero_in)      ) nt_aero       = nt_aero_in
         if (present(nt_bgc_Nit_in)   ) nt_bgc_Nit    = nt_bgc_Nit_in
         if (present(nt_bgc_Am_in)    ) nt_bgc_Am     = nt_bgc_Am_in
@@ -745,7 +756,7 @@
            nt_fbri_out, nt_iage_out, nt_FY_out, &
            nt_alvl_out, nt_vlvl_out, nt_apnd_out, nt_hpnd_out, nt_ipnd_out, &
            nt_smice_out, nt_smliq_out, nt_rhos_out, nt_rsnw_out, &
-           nt_fsd_out, nt_isosno_out, nt_isoice_out, &
+           nt_fsd_out, nt_isosno_out, nt_isoice_out, nt_fluff_out, &
            nt_aero_out, nt_zaero_out, nt_bgc_C_out, &
            nt_bgc_N_out, nt_bgc_chl_out, nt_bgc_DOC_out, nt_bgc_DON_out, &
            nt_bgc_DIC_out, nt_bgc_Fed_out, nt_bgc_Fep_out, nt_bgc_Nit_out, nt_bgc_Am_out, &
@@ -778,6 +789,7 @@
              nt_fsd_out,  & ! floe size distribution
              nt_isosno_out,  & ! starting index for isotopes in snow
              nt_isoice_out,  & ! starting index for isotopes in ice
+             nt_fluff_out,   & ! starting index for fluffballs in ice
              nt_aero_out,    & ! starting index for aerosols in ice
              nt_bgc_Nit_out, & ! nutrients
              nt_bgc_Am_out,  & !
@@ -858,6 +870,7 @@
         if (present(nt_isosno_out)    ) nt_isosno_out     = nt_isosno
         if (present(nt_isoice_out)    ) nt_isoice_out     = nt_isoice
         if (present(nt_aero_out)      ) nt_aero_out       = nt_aero
+        if (present(nt_fluff_out)     ) nt_fluff_out      = nt_fluff
         if (present(nt_bgc_Nit_out)   ) nt_bgc_Nit_out    = nt_bgc_Nit
         if (present(nt_bgc_Am_out)    ) nt_bgc_Am_out     = nt_bgc_Am
         if (present(nt_bgc_Sil_out)   ) nt_bgc_Sil_out    = nt_bgc_Sil
@@ -937,6 +950,7 @@
         write(iounit,*) "  nt_isosno     = ",nt_isosno
         write(iounit,*) "  nt_isoice     = ",nt_isoice
         write(iounit,*) "  nt_aero       = ",nt_aero
+        write(iounit,*) "  nt_fluff      = ",nt_fluff
         write(iounit,*) "  nt_bgc_Nit    = ",nt_bgc_Nit
         write(iounit,*) "  nt_bgc_Am     = ",nt_bgc_Am
         write(iounit,*) "  nt_bgc_Sil    = ",nt_bgc_Sil
@@ -1014,7 +1028,7 @@
 
       subroutine icepack_init_tracer_sizes(&
          ncat_in, nilyr_in, nslyr_in, nblyr_in, nfsd_in  , &
-         n_algae_in, n_DOC_in, n_aero_in, n_iso_in, &
+         n_algae_in, n_DOC_in, n_aero_in, n_iso_in, n_fluff_in, &
          n_DON_in, n_DIC_in, n_fed_in, n_fep_in, n_zaero_in, &
          ntrcr_in, ntrcr_o_in, nbtrcr_in, nbtrcr_sw_in)
 
@@ -1032,6 +1046,7 @@
          n_fep_in  , & !
          n_zaero_in, & !
          n_iso_in  , & !
+         n_fluff_in, & !
          n_aero_in , & !
          ntrcr_in  , & ! number of tracers in use
          ntrcr_o_in, & ! number of non-bio tracers in use
@@ -1056,6 +1071,7 @@
         if (present(n_fep_in)    ) n_fep     = n_fep_in
         if (present(n_zaero_in)  ) n_zaero   = n_zaero_in
         if (present(n_iso_in)    ) n_iso     = n_iso_in
+        if (present(n_fluff_in)  ) n_fluff   = n_fluff_in
         if (present(n_aero_in)   ) n_aero    = n_aero_in
 
         if (present(ntrcr_in)    ) ntrcr     = ntrcr_in
@@ -1074,7 +1090,7 @@
          max_don_out    , max_fe_out     , nmodal1_out      , &
          nmodal2_out    , max_aero_out   , max_nbtrcr_out   , &
          ncat_out, nilyr_out, nslyr_out, nblyr_out, nfsd_out, &
-         n_algae_out, n_DOC_out, n_aero_out, n_iso_out, &
+         n_algae_out, n_DOC_out, n_aero_out, n_iso_out, n_fluff_out, &
          n_DON_out, n_DIC_out, n_fed_out, n_fep_out, n_zaero_out, &
          ntrcr_out, ntrcr_o_out, nbtrcr_out, nbtrcr_sw_out)
 
@@ -1103,6 +1119,7 @@
          n_fep_out  , & !
          n_zaero_out, & !
          n_iso_out  , & !
+         n_fluff_out, & !
          n_aero_out , & !
          ntrcr_out  , & ! number of tracers in use
          ntrcr_o_out, & ! number of non-bio tracers in use
@@ -1138,6 +1155,7 @@
         if (present(n_zaero_out)  ) n_zaero_out   = n_zaero
         if (present(n_aero_out)   ) n_aero_out    = n_aero
         if (present(n_iso_out)    ) n_iso_out     = n_iso
+        if (present(n_fluff_out)  ) n_fluff_out   = n_fluff
 
         if (present(ntrcr_out)    ) ntrcr_out     = ntrcr
         if (present(ntrcr_o_out)  ) ntrcr_o_out   = ntrcr_o
@@ -1186,6 +1204,7 @@
         write(iounit,*) "  n_zaero   = ",n_zaero
         write(iounit,*) "  n_aero    = ",n_aero
         write(iounit,*) "  n_iso     = ",n_iso
+        write(iounit,*) "  n_fluff   = ",n_fluff
         write(iounit,*) "  ntrcr     = ",ntrcr
         write(iounit,*) "  ntrcr_o   = ",ntrcr_o
         write(iounit,*) "  nbtrcr    = ",nbtrcr

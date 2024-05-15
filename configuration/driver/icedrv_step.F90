@@ -151,7 +151,7 @@
 
       integer (kind=int_kind) :: &
          ntrcr, nt_apnd, nt_hpnd, nt_ipnd, nt_alvl, nt_vlvl, nt_Tsfc, &
-         nt_iage, nt_FY, nt_qice, nt_sice, nt_qsno, &
+         nt_iage, nt_fluff, nt_FY, nt_qice, nt_sice, nt_qsno, &
          nt_aero, nt_isosno, nt_isoice, nt_rsnw, nt_smice, nt_smliq
 
       logical (kind=log_kind) :: &
@@ -198,7 +198,7 @@
       call icepack_query_tracer_indices( &
          nt_apnd_out=nt_apnd, nt_hpnd_out=nt_hpnd, nt_ipnd_out=nt_ipnd, &
          nt_alvl_out=nt_alvl, nt_vlvl_out=nt_vlvl, nt_Tsfc_out=nt_Tsfc, &
-         nt_iage_out=nt_iage, nt_FY_out=nt_FY, &
+         nt_iage_out=nt_iage, nt_fluff_out=nt_fluff, nt_FY_out=nt_FY, &
          nt_qice_out=nt_qice, nt_sice_out=nt_sice, &
          nt_aero_out=nt_aero, nt_qsno_out=nt_qsno, &
          nt_rsnw_out=nt_rsnw, nt_smice_out=nt_smice, nt_smliq_out=nt_smliq, &
@@ -289,6 +289,7 @@
             hpnd = trcrn(i,nt_hpnd,:),                 &
             ipnd = trcrn(i,nt_ipnd,:),                 &
             iage = trcrn(i,nt_iage,:),                 &
+            fluff= trcrn(i,nt_fluff,:),                &
             FY   = trcrn(i,nt_FY,:),                   &
             rsnwn  = rsnwn (:,:),            &
             smicen = smicen(:,:),            &

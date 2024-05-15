@@ -30,7 +30,7 @@
       use icepack_parameters, only: saltflux_option
       use icepack_parameters, only: icepack_chkoptargflag
 
-      use icepack_tracers, only: tr_iage, tr_FY, tr_aero, tr_pond, tr_fsd, tr_iso
+      use icepack_tracers, only: tr_iage, tr_fluff, tr_FY, tr_aero, tr_pond, tr_fsd, tr_iso
       use icepack_tracers, only: tr_pond_lvl, tr_pond_topo
       use icepack_tracers, only: n_aero, n_iso
 
@@ -49,6 +49,7 @@
 
       use icepack_aerosol, only: update_aerosol
       use icepack_isotope, only: update_isotope
+      use icepack_fluffballs, only: increment_fluff
       use icepack_atmo, only: neutral_drag_coeffs, icepack_atm_boundary
       use icepack_age, only: increment_age
       use icepack_firstyear, only: update_FYarea
@@ -2085,6 +2086,7 @@
                                     iage        , FY          , &
                                     aerosno     , aeroice     , &
                                     isosno      , isoice      , &
+                                    fluff       ,               &
                                     uatm        , vatm        , &
                                     wind        , zlvl        , &
                                     Qa          , rhoa        , &
@@ -2300,6 +2302,7 @@
          hpnd        , & ! melt pond depth                        (m)
          ipnd        , & ! melt pond refrozen lid thickness       (m)
          iage        , & ! volume-weighted ice age
+         fluff       , & ! area-weighted ice fluffballs
          FY          , & ! area-weighted first-year ice area
          fsurfn      , & ! net flux to top surface, excluding fcondtop
          fcondtopn   , & ! downward cond flux at top surface  (W m-2)
@@ -2609,6 +2612,7 @@
       !-----------------------------------------------------------------
 
             if (tr_iage) call increment_age (dt, iage(n))
+            if (tr_fluff) call increment_fluff (dt, fluff(n))
             if (icepack_warnings_aborted(subname)) return
             if (tr_FY)   call update_FYarea (dt,               &
                                              lmask_n, lmask_s, &

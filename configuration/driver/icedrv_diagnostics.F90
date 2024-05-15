@@ -95,9 +95,9 @@
       real (kind=dbl_kind) :: &
          Tffresh, rhos, rhow, rhoi
 
-      logical (kind=log_kind) :: tr_brine, tr_fsd, tr_iso, tr_snow
+      logical (kind=log_kind) :: tr_brine, tr_fsd, tr_iso, tr_snow, tr_fluff
       integer (kind=int_kind) :: nt_fbri, nt_Tsfc, nt_fsd, nt_isosno, nt_isoice
-      integer (kind=int_kind) :: nt_rsnw, nt_rhos, nt_smice, nt_smliq
+      integer (kind=int_kind) :: nt_rsnw, nt_rhos, nt_smice, nt_smliq, nt_fluff
 
       character(len=*), parameter :: subname='(runtime_diags)'
 
@@ -108,10 +108,10 @@
       call icepack_query_parameters(calc_Tsfc_out=calc_Tsfc, &
            snwredist_out=snwredist, snwgrain_out=snwgrain)
       call icepack_query_tracer_flags(tr_brine_out=tr_brine, &
-           tr_fsd_out=tr_fsd,tr_iso_out=tr_iso,tr_snow_out=tr_snow)
+           tr_fsd_out=tr_fsd,tr_iso_out=tr_iso,tr_snow_out=tr_snow,tr_fluff_out=tr_fluff)
       call icepack_query_tracer_indices(nt_fbri_out=nt_fbri, nt_Tsfc_out=nt_Tsfc,&
            nt_fsd_out=nt_fsd, nt_isosno_out=nt_isosno, nt_isoice_out=nt_isoice, &
-           nt_rsnw_out=nt_rsnw, nt_rhos_out=nt_rhos, &
+           nt_rsnw_out=nt_rsnw, nt_rhos_out=nt_rhos, nt_fluff_out=nt_fluff, &
            nt_smice_out=nt_smice, nt_smliq_out=nt_smliq)
       call icepack_query_parameters(Tffresh_out=Tffresh, rhos_out=rhos, &
            rhow_out=rhow, rhoi_out=rhoi)
@@ -266,6 +266,9 @@
              write(nu_diag_out+n-1,901) 'isotopic gain/loss   = ',(fiso_atm(n,k)-fiso_ocn(n,k)+fiso_evap(n,k))*dt,k
              write(nu_diag_out+n-1,901) 'isotopic conc chg    = ',pdiso(n,k),k
           enddo
+        endif
+        if (tr_fluff) then
+           write(nu_diag_out+n-1,901) 'fluffballs = ',trcr(n,nt_fluff)
         endif
       end do
 899   format (43x,a24)

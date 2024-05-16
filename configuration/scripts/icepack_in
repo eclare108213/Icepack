@@ -32,6 +32,7 @@
     tr_snow      = .false.
     tr_aero      = .false.
     tr_fsd       = .false.
+    tr_fluff     = .false.
     tr_iso       = .false.
 /
 

@@ -1,6 +1,5 @@
 !=======================================================================
 !
-! authors Elizabeth Hunke
 
       module icepack_fluffballs
 
@@ -31,7 +30,7 @@
 
       character(len=*),parameter :: subname='(increment_fluff)'
 
-      ifluff = ifluff + dt
+      ifluff = ifluff + dt / 86400.0d0
 
       ! Other processes that could impact the number of fluffballs
 

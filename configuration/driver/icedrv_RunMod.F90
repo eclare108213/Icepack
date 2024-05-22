@@ -33,8 +33,8 @@
 
       use icedrv_calendar, only: istep, istep1, time, dt, stop_now, calendar
       use icedrv_forcing, only: get_forcing, get_wave_spec
+      use icedrv_forcing, only: ffluff_default
       use icedrv_forcing_bgc, only: faero_default, fiso_default, get_forcing_bgc
-      use icedrv_forcing_bgc, only: ffluff_default
       use icedrv_flux, only: init_flux_atm_ocn
       use icedrv_history, only: history_format, history_close
 

@@ -24,7 +24,7 @@
       implicit none
       private
       public :: init_forcing, get_forcing, interp_coeff, &
-                interp_coeff_monthly, get_wave_spec
+                interp_coeff_monthly, get_wave_spec, ffluff_default
 
       integer (kind=int_kind), parameter :: &
          ntime = 8760        ! number of data points in time
@@ -1159,6 +1159,21 @@
       enddo
 
       end subroutine get_wave_spec
+
+!=======================================================================
+
+! constant values for atmospheric fluffballs
+!
+! authors: Elizabeth Hunke, LANL
+
+      subroutine ffluff_default
+
+      use icedrv_flux, only: ffluff_atm
+      character(len=*), parameter :: subname='(ffluff_default)'
+
+      ffluff_atm(:,1) = 1.e-12_dbl_kind ! kg/m^2 s
+
+      end subroutine ffluff_default
 
 !=======================================================================
 

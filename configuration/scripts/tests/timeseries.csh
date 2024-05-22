@@ -22,6 +22,7 @@ set fieldlist=("area fraction  " \
                "outward longwave flx" \
                "sensible heat flx" \
                "latent heat flx" \
+               "fluffball total" \
 #               "subl/cond (m ice)" \
                "top melt (m)" \
                "bottom melt (m)" \

@@ -282,6 +282,7 @@
              write(nu_diag_out+n-1,901) 'fluffball loss to ocn   = ',ffluff_ocn(n,k)*dt,k
              write(nu_diag_out+n-1,901) 'fluffball gain/loss     = ',(ffluff_atm(n,k)-ffluff_ocn(n,k))*dt,k
              write(nu_diag_out+n-1,901) 'fluffball conc chg      = ',pdfluff(n,k),k
+             write(nu_diag_out+n-1,901) 'fluffball total         = ',trcr(n,nt_fluff+k-1)*aice(n)
           enddo
         endif
       end do

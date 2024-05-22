@@ -19,7 +19,7 @@
 
       implicit none
       private
-      public :: get_forcing_bgc, faero_default, fiso_default, init_forcing_bgc
+      public :: get_forcing_bgc, faero_default, fiso_default, init_forcing_bgc, ffluff_default
 
       real (kind=dbl_kind), dimension(365) :: & ! hardwired for now
          sil_data, nit_data
@@ -181,6 +181,21 @@
       fiso_atm(:,3) = 1.e-14_dbl_kind
 
       end subroutine fiso_default
+
+!=======================================================================
+
+! constant values for atmospheric fluffballs
+!
+! authors: Elizabeth Hunke, LANL
+
+      subroutine ffluff_default
+
+      use icedrv_flux, only: ffluff_atm
+      character(len=*), parameter :: subname='(ffluff_default)'
+
+      ffluff_atm(:,1) = 1.e-12_dbl_kind ! kg/m^2 s
+
+      end subroutine ffluff_default
 
 !=======================================================================
 

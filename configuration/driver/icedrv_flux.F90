@@ -9,7 +9,7 @@
       module icedrv_flux
 
       use icedrv_kinds
-      use icedrv_domain_size, only: ncat, nilyr, nx
+      use icedrv_domain_size, only: ncat, nilyr, nx, n_fluff
       use icedrv_constants, only: c0, c1, c5, c10, c20, c180
       use icedrv_constants, only: nu_diag
       use icepack_intfc, only: icepack_max_iso, icepack_max_aero
@@ -299,6 +299,10 @@
          fiso_atm  , & ! isotope deposition rate (kg/m^2 s)
          fiso_evap     ! isotope evaporation rate (kg/m^2 s)
 
+      real (kind=dbl_kind), &   ! coupling variable for tr_fluff
+         dimension (nx,n_fluff), public :: &
+         ffluff_atm     ! fluffball  deposition rate (kg/m^2 s)
+
       real (kind=dbl_kind), &
          dimension (nx,icepack_max_nbtrcr), public :: &
          flux_bio_atm  ! all bio fluxes to ice from atmosphere
@@ -316,6 +320,10 @@
       real (kind=dbl_kind), &
          dimension (nx,icepack_max_iso), public :: &
          fiso_ocn    ! isotope flux to ocean  (kg/m^2/s)
+
+      real (kind=dbl_kind), &
+         dimension (nx,n_fluff), public :: &
+         ffluff_ocn    ! fluffball flux to ocean  (kg/m^2/s)
 
       real (kind=dbl_kind), &
          dimension (nx,icepack_max_nbtrcr), public :: &
@@ -475,6 +483,7 @@
       endif !     l_winter
 
       fiso_atm     (:,:) = c0        ! isotope deposition rate (kg/m2/s)
+      ffluff_atm   (:,:) = c0        ! fluffball deposition rate (kg/m2/s)
       fiso_evap    (:,:) = c0        ! isotope evaporation rate (kg/m2/s)
       faero_atm    (:,:) = c0        ! aerosol deposition rate (kg/m2/s)
       flux_bio_atm (:,:) = c0        ! zaero and bio deposition rate (kg/m2/s)
@@ -611,6 +620,7 @@
       fswthru_idr  (:)   = c0
       fswthru_idf  (:)   = c0
       fiso_ocn (:,:) = c0
+      ffluff_ocn (:,:) = c0
       faero_ocn(:,:) = c0
 
       end subroutine init_flux_atm_ocn

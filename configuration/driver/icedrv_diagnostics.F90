@@ -9,7 +9,7 @@
       use icedrv_kinds
       use icedrv_constants, only: nu_diag, nu_diag_out
       use icedrv_domain_size, only: nx
-      use icedrv_domain_size, only: ncat, nfsd, n_iso, nilyr, nslyr
+      use icedrv_domain_size, only: ncat, nfsd, n_iso, nilyr, nslyr, n_fluff
       use icepack_intfc, only: c0
       use icepack_intfc, only: icepack_warnings_flush, icepack_warnings_aborted
       use icepack_intfc, only: icepack_query_parameters
@@ -45,6 +45,9 @@
       real (kind=dbl_kind), dimension(nx,n_iso) :: &
          pdiso                ! change in mean isotope concentration
 
+      real (kind=dbl_kind), dimension(nx,n_fluff) :: &
+         pdfluff                ! change in mean isotope concentration
+
 !=======================================================================
 
       contains
@@ -62,7 +65,7 @@
       use icedrv_arrays_column, only: floe_rad_c
       use icedrv_flux, only: evap, fsnow, frazil
       use icedrv_flux, only: fswabs, flw, flwout, fsens, fsurf, flat
-      use icedrv_flux, only: frain, fiso_evap, fiso_ocn, fiso_atm
+      use icedrv_flux, only: frain, fiso_evap, fiso_ocn, fiso_atm, ffluff_atm, ffluff_ocn
       use icedrv_flux, only: Tair, Qa, fsw, fcondtop
       use icedrv_flux, only: meltt, meltb, meltl, snoice
       use icedrv_flux, only: dsnow, congel, sst, sss, Tf, fhocn
@@ -190,6 +193,12 @@
            pdiso(n,k) = work3(n) - pdiso(n,k)
         enddo
 
+        work3(:) = c0
+
+        do k = 1, n_fluff
+           work3 (n)  =  trcr(n,nt_fluff+k-1)*aice(n)
+           pdfluff(n,k) = work3(n) - pdfluff(n,k)
+        enddo
         !-----------------------------------------------------------------
         ! start spewing
         !-----------------------------------------------------------------
@@ -268,7 +277,12 @@
           enddo
         endif
         if (tr_fluff) then
-           write(nu_diag_out+n-1,901) 'fluffballs = ',trcr(n,nt_fluff)
+          do k = 1, n_fluff
+             write(nu_diag_out+n-1,901) 'fluffball gain from atm = ',ffluff_atm(n,k)*dt,k
+             write(nu_diag_out+n-1,901) 'fluffball loss to ocn   = ',ffluff_ocn(n,k)*dt,k
+             write(nu_diag_out+n-1,901) 'fluffball gain/loss     = ',(ffluff_atm(n,k)-ffluff_ocn(n,k))*dt,k
+             write(nu_diag_out+n-1,901) 'fluffball conc chg      = ',pdfluff(n,k),k
+          enddo
         endif
       end do
 899   format (43x,a24)
@@ -285,9 +299,9 @@
 
       subroutine init_mass_diags
 
-      use icedrv_state, only: vice, vsno, trcr
+      use icedrv_state, only: vice, vsno, trcr, aice
 
-      integer (kind=int_kind) :: i, k, nt_isosno, nt_isoice
+      integer (kind=int_kind) :: i, k, nt_isosno, nt_isoice, nt_fluff
 
       real (kind=dbl_kind), dimension (nx) :: work1
 
@@ -295,6 +309,7 @@
 
       call icepack_query_tracer_indices(nt_isosno_out=nt_isosno)
       call icepack_query_tracer_indices(nt_isoice_out=nt_isoice)
+      call icepack_query_tracer_indices(nt_fluff_out=nt_fluff)
 
       call total_energy (work1)
       do i = 1, nx
@@ -304,6 +319,9 @@
          do k = 1, n_iso
             pdiso(i,k) = (trcr(i,nt_isosno+k-1)*vsno(i) &
                          +trcr(i,nt_isoice+k-1)*vice(i))
+         enddo
+         do k = 1, n_fluff
+            pdfluff(i,k) = trcr(i,nt_fluff+k-1)*aice(i)
          enddo
       enddo
 

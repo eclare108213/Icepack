@@ -46,7 +46,7 @@
          pdiso                ! change in mean isotope concentration
 
       real (kind=dbl_kind), dimension(nx,n_fluff) :: &
-         pdfluff                ! change in mean isotope concentration
+         pdfluff                ! change in mean fluffball concentration
 
 !=======================================================================
 
@@ -280,8 +280,8 @@
           do k = 1, n_fluff
              write(nu_diag_out+n-1,901) 'fluffball gain from atm = ',ffluff_atm(n,k)*dt,k
              write(nu_diag_out+n-1,901) 'fluffball loss to ocn   = ',ffluff_ocn(n,k)*dt,k
-             write(nu_diag_out+n-1,901) 'fluffball gain/loss     = ',(ffluff_atm(n,k)-ffluff_ocn(n,k))*dt,k
-             write(nu_diag_out+n-1,901) 'fluffball conc chg      = ',pdfluff(n,k),k
+             write(nu_diag_out+n-1,901) 'fluffball gain or loss  = ',(ffluff_atm(n,k)-ffluff_ocn(n,k))*dt,k
+             write(nu_diag_out+n-1,901) 'fluffball concentration = ',pdfluff(n,k),k
              write(nu_diag_out+n-1,901) 'fluffball total         = ',trcr(n,nt_fluff+k-1)*aice(n)
           enddo
         endif

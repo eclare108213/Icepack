@@ -2302,7 +2302,6 @@
          hpnd        , & ! melt pond depth                        (m)
          ipnd        , & ! melt pond refrozen lid thickness       (m)
          iage        , & ! volume-weighted ice age
-         fluff       , & ! area-weighted ice fluffballs
          FY          , & ! area-weighted first-year ice area
          fsurfn      , & ! net flux to top surface, excluding fcondtop
          fcondtopn   , & ! downward cond flux at top surface  (W m-2)
@@ -2345,6 +2344,9 @@
       real (kind=dbl_kind), dimension(:,:,:), intent(inout) :: &
          aerosno    , &  ! snow aerosol tracer               (kg/m^2)
          aeroice         ! ice aerosol tracer                (kg/m^2)
+
+      real (kind=dbl_kind), dimension(:), intent(inout), optional :: &
+         fluff           ! area-weighted ice fluffballs
 
       real (kind=dbl_kind), dimension(:,:), intent(inout), optional :: &
          isosno     , &  ! snow isotope tracer               (kg/m^2)
@@ -2612,7 +2614,10 @@
       !-----------------------------------------------------------------
 
             if (tr_iage) call increment_age (dt, iage(n))
-            if (tr_fluff) call increment_fluff (dt, fluff(n))
+            if (icepack_warnings_aborted(subname)) return
+            if (present(fluff)) then
+               if (tr_fluff) call increment_fluff (dt, fluff(n))
+            endif
             if (icepack_warnings_aborted(subname)) return
             if (tr_FY)   call update_FYarea (dt,               &
                                              lmask_n, lmask_s, &

@@ -194,11 +194,16 @@
         enddo
 
         work3(:) = c0
+        pdfluff(:,:) = c0
 
-        do k = 1, n_fluff
-           work3 (n)  =  trcr(n,nt_fluff+k-1)*aice(n)
-           pdfluff(n,k) = work3(n) - pdfluff(n,k)
-        enddo
+        if (tr_fluff) then
+           do k = 1, n_fluff
+              work3 (n)  =  trcr(n,nt_fluff+k-1)
+!              pdfluff(n,k) = work3(n) - pdfluff(n,k) ! change
+              pdfluff(n,k) = work3(n)                 ! tracer concentration
+           enddo
+        endif
+
         !-----------------------------------------------------------------
         ! start spewing
         !-----------------------------------------------------------------
@@ -278,10 +283,10 @@
         endif
         if (tr_fluff) then
           do k = 1, n_fluff
-             write(nu_diag_out+n-1,901) 'fluffball gain from atm = ',ffluff_atm(n,k)*dt,k
-             write(nu_diag_out+n-1,901) 'fluffball loss to ocn   = ',ffluff_ocn(n,k)*dt,k
-             write(nu_diag_out+n-1,901) 'fluffball gain or loss  = ',(ffluff_atm(n,k)-ffluff_ocn(n,k))*dt,k
-             write(nu_diag_out+n-1,901) 'fluffball concentration = ',pdfluff(n,k),k
+             write(nu_diag_out+n-1,901) 'fluffball gain from atm = ',ffluff_atm(n,k)*dt
+             write(nu_diag_out+n-1,901) 'fluffball loss to ocn   = ',ffluff_ocn(n,k)*dt
+             write(nu_diag_out+n-1,901) 'fluffball gain or loss  = ',(ffluff_atm(n,k)-ffluff_ocn(n,k))*dt
+             write(nu_diag_out+n-1,901) 'fluffball concentration = ',pdfluff(n,k)
              write(nu_diag_out+n-1,901) 'fluffball total         = ',trcr(n,nt_fluff+k-1)*aice(n)
           enddo
         endif

@@ -2491,7 +2491,6 @@
 
       real (kind=dbl_kind) :: &
          worka       , &   ! temporary variables
-         workb       , &
          workc
 
       ! 2D coupler variables (computed for each category, then aggregated)
@@ -2770,7 +2769,6 @@
          lhcoef = c0
          shcoef = c0
          worka  = c0
-         workb  = c0
 
          if (aicen_init(n) > puny) then
 
@@ -2785,21 +2783,72 @@
       !       components are set to the data values.
       !-----------------------------------------------------------------
 
-               call icepack_atm_boundary('ice',                  &
-                                        Tsfc(n),  potT,          &
-                                        uatm,     vatm,          &
-                                        wind,     zlvl,          &
-                                        Qa,       rhoa,          &
-                                        strairxn, strairyn,      &
-                                        Trefn,    Qrefn,         &
-                                        worka,    workb,         &
-                                        lhcoef,   shcoef,        &
-                                        Cdn_atm,                 &
-                                        Cdn_atm_ratio_n,         &
-                                        Qa_iso=Qa_iso,           &
-                                        Qref_iso=Qrefn_iso,      &
-                                        uvel=uvel, vvel=vvel,    &
-                                        Uref=Urefn, zlvs=zlvs)
+!echmod: save original call for now
+!               call icepack_atm_boundary(sfctype  = 'ice',                &
+!                                         Tsf      = Tsfc(n),              &
+!                                         potT     = potT,                 &
+!                                         uatm     = uatm,                 &
+!                                         vatm     = vatm,                 &
+!                                         wind     = wind,                 &
+!                                         zlvl     = zlvl,                 &
+!                                         Qa       = Qa,                   &
+!                                         rhoa     = rhoa,                 &
+!                                         strx     = strairxn,             &
+!                                         stry     = strairyn,             &
+!                                         Tref     = Trefn,                &
+!                                         Qref     = Qrefn,                &
+!                                         lhcoef   = lhcoef,               &
+!                                         shcoef   = shcoef,               &
+!                                         Cdn_atm  = Cdn_atm,              &
+!                                         Cdn_atm_ratio_n = Cdn_atm_ratio, &
+!                                         Qa_iso   = Qa_iso,               &
+!                                         Qref_iso = Qrefn_iso,            &
+!                                         uvel     = uvel,                 &
+!                                         vvel     = vvel,                 &
+!                                         Uref     = Urefn,                &
+!                                         zlvs     = zlvs)
+               ! turbulent flux coefficients
+               call icepack_atm_boundary(sfctype  = 'ice',                &
+                                         Tsf      = Tsfc(n),              &
+                                         potT     = potT,                 &
+                                         uatm     = uatm,                 &
+                                         vatm     = vatm,                 &
+                                         wind     = wind,                 &
+                                         zlvl     = zlvl,                 &
+                                         Qa       = Qa,                   &
+                                         rhoa     = rhoa,                 &
+                                         Cdn_atm  = Cdn_atm,              &
+                                         Cdn_atm_ratio_n = Cdn_atm_ratio, &
+                                         Tref     = Trefn,                &
+                                         Qref     = Qrefn,                &
+                                         lhcoef   = lhcoef,               &
+                                         shcoef   = shcoef,               &
+                                         Qa_iso   = Qa_iso,               &
+                                         Qref_iso = Qrefn_iso,            &
+                                         uvel     = uvel,                 &
+                                         vvel     = vvel,                 &
+                                         zlvs     = zlvs,                 &
+                                         flag     = 'turbulent')
+
+               ! wind stress
+               call icepack_atm_boundary(sfctype  = 'ice',                &
+                                         Tsf      = Tsfc(n),              &
+                                         potT     = potT,                 &
+                                         uatm     = uatm,                 &
+                                         vatm     = vatm,                 &
+                                         wind     = wind,                 &
+                                         zlvl     = zlvl,                 &
+                                         Qa       = Qa,                   &
+                                         rhoa     = rhoa,                 &
+                                         Cdn_atm  = Cdn_atm,              &
+                                         Cdn_atm_ratio_n = Cdn_atm_ratio, &
+                                         strx     = strairxn,             &
+                                         stry     = strairyn,             &
+                                         uvel     = uvel,                 &
+                                         vvel     = vvel,                 &
+                                         Uref     = Urefn,                &
+                                         zlvs     = zlvs,                 &
+                                         flag     = 'momentum')
                if (icepack_warnings_aborted(subname)) return
 
             endif   ! calc_Tsfc or calc_strair

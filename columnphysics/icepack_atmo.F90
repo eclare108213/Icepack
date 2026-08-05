@@ -49,7 +49,7 @@
 !
 ! Code originally based on CSM1
 
-      subroutine atmo_boundary_layer (sfctype,            &
+      subroutine atmo_boundary_layer (sfctype,  flag,     &
                                       calc_strair, formdrag, &
                                       Tsf,      potT,     &
                                       uatm,     vatm,     &
@@ -84,21 +84,23 @@
          Qa       , & ! specific humidity (kg/kg)
          rhoa         ! air density (kg/m^3)
 
+      real (kind=dbl_kind), intent(inout), optional :: &
+         delt     , & ! potential T difference   (K)
+         delq         ! humidity difference      (kg/kg)
+
       real (kind=dbl_kind), intent(inout) :: &
          Cdn_atm      ! neutral drag coefficient
 
       real (kind=dbl_kind), intent(inout) :: &
          Cdn_atm_ratio_n ! ratio drag coeff / neutral drag coeff
 
-      real (kind=dbl_kind), intent(inout) :: &
+      real (kind=dbl_kind), intent(inout), optional :: &
          strx     , & ! x surface stress (N)
          stry         ! y surface stress (N)
 
-      real (kind=dbl_kind), intent(inout) :: &
+      real (kind=dbl_kind), intent(inout), optional :: &
          Tref     , & ! reference height temperature  (K)
          Qref     , & ! reference height specific humidity (kg/kg)
-         delt     , & ! potential T difference   (K)
-         delq     , & ! humidity difference      (kg/kg)
          shcoef   , & ! transfer coefficient for sensible heat
          lhcoef       ! transfer coefficient for latent heat
 
@@ -108,15 +110,19 @@
       real (kind=dbl_kind), intent(inout), dimension(:), optional :: &
          Qref_iso     ! reference specific isotopic humidity (kg/kg)
 
-      real (kind=dbl_kind), intent(in) :: &
+      real (kind=dbl_kind), intent(in), optional :: &
          uvel     , & ! x-direction ice speed (m/s)
          vvel         ! y-direction ice speed (m/s)
 
-      real (kind=dbl_kind), intent(out) :: &
+      real (kind=dbl_kind), intent(out), optional :: &
          Uref         ! reference height wind speed (m/s)
 
       real (kind=dbl_kind), intent(in), optional :: &
          zlvs        ! atm level height (scalar quantities) (m)
+
+      character (len=*), intent(in) :: &
+         flag        ! calculate coefficients for wind stress ('momentum')
+                     ! or sensible and latent heat fluxes ('turbulent')
 
       ! local variables
 
@@ -178,14 +184,6 @@
       else
        umin  = c1 ! minumum allowable wind speed of 1m/s
       endif
-
-      Tref = c0
-      Qref = c0
-      Uref = c0
-      delt = c0
-      delq = c0
-      shcoef = c0
-      lhcoef = c0
 
       !------------------------------------------------------------
       ! Compute turbulent flux coefficients, wind stress, and
@@ -297,7 +295,7 @@
 
       enddo                     ! end iteration
 
-      if (calc_strair) then
+      if (calc_strair .and. (trim(flag)=='momentum' .or. trim(flag)=='all')) then
 
          ! initialize
          strx = c0
@@ -337,54 +335,67 @@
 
          Cdn_atm_ratio_n = rd * rd / rdn / rdn
 
-      endif                     ! calc_strair
+         Uref = c0
+         if (highfreq .and. sfctype(1:3)=='ice') then
+            Uref = sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * rd / rdn
+         else
+            Uref = vmag * rd / rdn
+         endif
 
-      !------------------------------------------------------------
-      ! coefficients for turbulent flux calculation
-      !------------------------------------------------------------
-      ! add windless coefficient for sensible heat flux
-      ! as in Jordan et al (JGR, 1999)
-      !------------------------------------------------------------
+      endif                     ! calc_strair, momentum
 
-      if (trim(atmbndy) == 'mixed') then
-         !- Use constant coefficients for sensible and latent heat fluxes
-         !    similar to atmo_boundary_const but using vmag instead of wind
-         shcoef = senscoef*cp_air*rhoa*vmag
-         lhcoef = latncoef*Lheat *rhoa*vmag
-      else ! 'similarity'
-         !- Monin-Obukhov similarity theory for boundary layer
-         shcoef = rhoa * ustar * cp * rh + c1
-         lhcoef = rhoa * ustar * Lheat  * re
-      endif
+      if (trim(flag)=='turbulent' .or. trim(flag)=='all') then
 
-      !------------------------------------------------------------
-      ! Compute diagnostics: 2m ref T, Q, U
-      !------------------------------------------------------------
+      ! initialize
+         Tref = c0
+         Qref = c0
+         delt = c0
+         delq = c0
+         shcoef = c0
+         lhcoef = c0
 
-      hols  = hols*zTrf/zlvl
-      psix2 = -c5*hols*stable + (c1-stable)*psi_scalar_unstable(hols)
-      fac   = (rh/vonkar) &
-            * (alzs + al2 - psixh + psix2)
-      Tref  = potT - delt*fac
-      Tref  = Tref - p01*zTrf ! pot temp to temp correction
-      fac   = (re/vonkar) &
-            * (alzs + al2 - psixh + psix2)
-      Qref  = Qa - delq*fac
+         !------------------------------------------------------------
+         ! coefficients for turbulent flux calculation
+         !------------------------------------------------------------
+         ! add windless coefficient for sensible heat flux
+         ! as in Jordan et al (JGR, 1999)
+         !------------------------------------------------------------
 
-      if (highfreq .and. sfctype(1:3)=='ice') then
-         Uref = sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * rd / rdn
-      else
-         Uref = vmag * rd / rdn
-      endif
+         if (trim(atmbndy) == 'mixed') then
+            !- Use constant coefficients for sensible and latent heat fluxes
+            !    similar to atmo_boundary_const but using vmag instead of wind
+            shcoef = senscoef*cp_air*rhoa*vmag
+            lhcoef = latncoef*Lheat *rhoa*vmag
+         else ! 'similarity'
+            !- Monin-Obukhov similarity theory for boundary layer
+            shcoef = rhoa * ustar * cp * rh + c1
+            lhcoef = rhoa * ustar * Lheat  * re
+         endif
 
-      if (tr_iso .and. sfctype(1:3)=='ice') then
-         Qref_iso(:) = c0
-         do n = 1, n_iso
-            ratio = c0
-            if (Qa_iso(2) > puny) ratio = Qa_iso(n)/Qa_iso(2)
-            Qref_iso(n) = Qa_iso(n) - ratio*delq*fac
-         enddo
-      endif
+         !------------------------------------------------------------
+         ! Compute diagnostics: 2m ref T, Q, U
+         !------------------------------------------------------------
+
+         hols  = hols*zTrf/zlvl
+         psix2 = -c5*hols*stable + (c1-stable)*psi_scalar_unstable(hols)
+         fac   = (rh/vonkar) &
+               * (alzs + al2 - psixh + psix2)
+         Tref  = potT - delt*fac
+         Tref  = Tref - p01*zTrf ! pot temp to temp correction
+         fac   = (re/vonkar) &
+               * (alzs + al2 - psixh + psix2)
+         Qref  = Qa - delq*fac
+
+         if (tr_iso .and. sfctype(1:3)=='ice') then
+            Qref_iso(:) = c0
+            do n = 1, n_iso
+               ratio = c0
+               if (Qa_iso(2) > puny) ratio = Qa_iso(n)/Qa_iso(2)
+               Qref_iso(n) = Qa_iso(n) - ratio*delq*fac
+            enddo
+         endif
+
+      endif ! turbulent
 
       end subroutine atmo_boundary_layer
 
@@ -828,15 +839,16 @@
                                      uatm,        vatm,          &
                                      wind,        zlvl,          &
                                      Qa,          rhoa,          &
+                                     Cdn_atm,                    &
+                                     Cdn_atm_ratio_n,            &
                                      strx,        stry,          &
                                      Tref,        Qref,          &
                                      delt,        delq,          &
                                      lhcoef,      shcoef,        &
-                                     Cdn_atm,                    &
-                                     Cdn_atm_ratio_n,            &
                                      Qa_iso,      Qref_iso,      &
                                      uvel,        vvel,          &
-                                     Uref,        zlvs)
+                                     Uref,        zlvs,          &
+                                     flag)
 
       character (len=3), intent(in) :: &
          sfctype      ! ice or ocean
@@ -855,17 +867,44 @@
          Cdn_atm  , &    ! neutral drag coefficient
          Cdn_atm_ratio_n ! ratio drag coeff / neutral drag coeff
 
-      real (kind=dbl_kind), intent(inout) :: &
+      ! optional arguments required for ocean mixed layer
+      real (kind=dbl_kind), intent(inout), optional :: &
+         delt     , & ! potential T difference   (K)
+         delq         ! humidity difference      (kg/kg)
+
+      ! optional argument required for split momentum/turbulent calculation
+      character (len=*), intent(in), optional :: &
+         flag        ! calculate coefficients for wind stress ('momentum')
+                     ! or sensible and latent heat fluxes ('turbulent')
+
+      ! optional arguments for momentum flux (wind stress)
+      ! required if flag = 'momentum'
+
+      real (kind=dbl_kind), intent(in), optional :: &
+         uvel     , & ! x-direction ice speed (m/s)
+         vvel         ! y-direction ice speed (m/s)
+
+      real (kind=dbl_kind), intent(inout), optional :: &
          strx     , & ! x surface stress (N)
          stry         ! y surface stress (N)
 
-      real (kind=dbl_kind), intent(inout) :: &
+      real (kind=dbl_kind), intent(out), optional :: &
+         Uref         ! reference height wind speed (m/s)
+
+      ! optional arguments for turbulent fluxes (latent and sensible heat)
+      ! required if flag = 'turbulent'
+
+      real (kind=dbl_kind), intent(inout), optional :: &
          Tref     , & ! reference height temperature  (K)
          Qref     , & ! reference height specific humidity (kg/kg)
-         delt     , & ! potential T difference   (K)
-         delq     , & ! humidity difference      (kg/kg)
          shcoef   , & ! transfer coefficient for sensible heat
          lhcoef       ! transfer coefficient for latent heat
+
+      real (kind=dbl_kind), intent(in), optional :: &
+         zlvs         ! atm level height for scalars (if different than zlvl) (m)
+
+      ! optional arguments for isotopes, calculated when flag = 'turbulent'
+      ! required if tr_iso = .true.
 
       real (kind=dbl_kind), intent(in), dimension(:), optional :: &
          Qa_iso       ! specific isotopic humidity (kg/kg)
@@ -873,30 +912,34 @@
       real (kind=dbl_kind), intent(inout), dimension(:), optional :: &
          Qref_iso     ! reference specific isotopic humidity (kg/kg)
 
-      real (kind=dbl_kind), intent(in), optional :: &
-         uvel     , & ! x-direction ice speed (m/s)
-         vvel     , & ! y-direction ice speed (m/s)
-         zlvs         ! atm level height for scalars (if different than zlvl) (m)
-
-      real (kind=dbl_kind), intent(out), optional :: &
-         Uref         ! reference height wind speed (m/s)
-
 !autodocument_end
 
       ! local variables
 
       real (kind=dbl_kind) :: &
-         l_uvel, l_vvel, l_Uref
+         l_uvel, l_vvel, l_Uref, &
+         l_delt, l_delq
 
       logical (kind=log_kind), save :: &
          first_call_ice = .true.   ! first call flag
 
+      character(len=char_len) :: l_flag ! chooses momentum or turbulent flux calculations
       character(len=*),parameter :: subname='(icepack_atm_boundary)'
 
       !------------------------------------------------------------
       ! Check optional arguments
       ! Need separate first_call flags for 'ice' and 'ocn' sfctype
       !------------------------------------------------------------
+
+      if (trim(atmbndy) == 'constant') then
+         if (.not.(present(strx).and.present(stry)) &
+             .and.(present(delt).and.present(delq)) &
+             .and.(present(lhcoef).and.present(shcoef))) then
+            call icepack_warnings_add(subname//' error in argument, atmbndy=constant')
+            call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+            return
+         endif
+      endif
 
       if (sfctype == 'ice') then
       if (icepack_chkoptargflag(first_call_ice)) then
@@ -910,14 +953,45 @@
       endif
       endif
 
+      l_flag = 'all'
+      if (present(flag)) then
+         l_flag = trim(flag)
+      endif
+
+      if (trim(l_flag) == 'all' .or. trim(l_flag) == 'turbulent') then
+         if (.not.(present(Tref).and.present(Qref)) &
+             .and.(present(shcoef).and.present(lhcoef))) then
+            call icepack_warnings_add(subname//' error in argument, atmbndy flag=turbulent')
+            call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+            return
+         endif
+      endif
+
+      if (trim(l_flag) == 'all' .or. trim(l_flag) == 'momentum') then
+         if (.not.(present(strx).and.present(stry))) then
+            call icepack_warnings_add(subname//' error in argument, atmbndy flag=momentum')
+            call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+            return
+         endif
+      endif
+
+      l_Uref = c0
       l_uvel = c0
       l_vvel = c0
-      l_Uref = c0
       if (present(uvel)) then
          l_uvel = uvel
       endif
       if (present(vvel)) then
          l_vvel = vvel
+      endif
+
+      l_delt = c0
+      l_delq = c0
+      if (present(delt)) then
+         l_delt = delt
+      endif
+      if (present(delq)) then
+         l_delq = delq
       endif
 
       Cdn_atm_ratio_n = c1
@@ -933,25 +1007,43 @@
                                    lhcoef,   shcoef    )
          if (icepack_warnings_aborted(subname)) return
       else
-         call atmo_boundary_layer (sfctype,                 &
-                                   calc_strair, formdrag,   &
-                                   Tsf,      potT,          &
-                                   uatm,     vatm,          &
-                                   wind,     zlvl,          &
-                                   Qa,       rhoa,          &
-                                   strx,     stry,          &
-                                   Tref,     Qref,          &
-                                   delt,     delq,          &
-                                   lhcoef,   shcoef,        &
-                                   Cdn_atm,                 &
-                                   Cdn_atm_ratio_n,         &
-                                   Qa_iso=Qa_iso,           &
-                                   Qref_iso=Qref_iso,       &
-                                   uvel=l_uvel, vvel=l_vvel,&
-                                   Uref=l_Uref, zlvs=zlvs   )
+         call atmo_boundary_layer (sfctype     = sfctype,     &
+                                   flag        = l_flag,      &
+                                   calc_strair = calc_strair, &
+                                   formdrag    = formdrag,    &
+                                   Tsf         = Tsf,         &
+                                   potT        = potT,        &
+                                   uatm        = uatm,        &
+                                   vatm        = vatm,        &
+                                   wind        = wind,        &
+                                   zlvl        = zlvl,        &
+                                   Qa          = Qa,          &
+                                   rhoa        = rhoa,        &
+                                   strx        = strx,        &
+                                   stry        = stry,        &
+                                   Tref        = Tref,        &
+                                   Qref        = Qref,        &
+                                   delt        = l_delt,      &
+                                   delq        = l_delq,      &
+                                   lhcoef      = lhcoef,      &
+                                   shcoef      = shcoef,      &
+                                   Cdn_atm     = Cdn_atm,     &
+                                   Cdn_atm_ratio_n = Cdn_atm_ratio_n, &
+                                   Qa_iso      = Qa_iso,      &
+                                   Qref_iso    = Qref_iso,    &
+                                   uvel        = l_uvel,      &
+                                   vvel        = l_vvel,      &
+                                   Uref        = l_Uref,      &
+                                   zlvs        = zlvs)
          if (icepack_warnings_aborted(subname)) return
       endif ! atmbndy
 
+      if (present(delt)) then
+         delt = l_delt
+      endif
+      if (present(delq)) then
+         delq = l_delq
+      endif
       if (present(Uref)) then
          Uref = l_Uref
       endif

@@ -84,21 +84,21 @@
          Qa       , & ! specific humidity (kg/kg)
          rhoa         ! air density (kg/m^3)
 
-      real (kind=dbl_kind), intent(inout), optional :: &
+      real (kind=dbl_kind), intent(out), optional :: &
          delt     , & ! potential T difference   (K)
          delq         ! humidity difference      (kg/kg)
 
       real (kind=dbl_kind), intent(inout) :: &
          Cdn_atm      ! neutral drag coefficient
 
-      real (kind=dbl_kind), intent(inout) :: &
+      real (kind=dbl_kind), intent(out) :: &
          Cdn_atm_ratio_n ! ratio drag coeff / neutral drag coeff
 
-      real (kind=dbl_kind), intent(inout), optional :: &
+      real (kind=dbl_kind), intent(out), optional :: &
          strx     , & ! x surface stress (N)
          stry         ! y surface stress (N)
 
-      real (kind=dbl_kind), intent(inout), optional :: &
+      real (kind=dbl_kind), intent(out), optional :: &
          Tref     , & ! reference height temperature  (K)
          Qref     , & ! reference height specific humidity (kg/kg)
          shcoef   , & ! transfer coefficient for sensible heat
@@ -107,7 +107,7 @@
       real (kind=dbl_kind), intent(in), dimension(:), optional :: &
          Qa_iso       ! specific isotopic humidity (kg/kg)
 
-      real (kind=dbl_kind), intent(inout), dimension(:), optional :: &
+      real (kind=dbl_kind), intent(out), dimension(:), optional :: &
          Qref_iso     ! reference specific isotopic humidity (kg/kg)
 
       real (kind=dbl_kind), intent(in), optional :: &
@@ -171,11 +171,11 @@
 
       character(len=*),parameter :: subname='(atmo_boundary_layer)'
 
-      al2 = log(zref/zTrf)
-
       !------------------------------------------------------------
       ! Initialize
       !------------------------------------------------------------
+
+      al2 = log(zref/zTrf)
 
       cpvir = cp_wv/cp_air-c1   ! defined as cp_wv/cp_air - 1.
 
@@ -184,6 +184,9 @@
       else
        umin  = c1 ! minumum allowable wind speed of 1m/s
       endif
+
+      delt = c0
+      delq = c0
 
       !------------------------------------------------------------
       ! Compute turbulent flux coefficients, wind stress, and
@@ -349,8 +352,6 @@
       ! initialize
          Tref = c0
          Qref = c0
-         delt = c0
-         delq = c0
          shcoef = c0
          lhcoef = c0
 
@@ -864,11 +865,13 @@
          rhoa         ! air density (kg/m^3)
 
       real (kind=dbl_kind), intent(inout) :: &
-         Cdn_atm  , &    ! neutral drag coefficient
+         Cdn_atm      ! neutral drag coefficient
+
+      real (kind=dbl_kind), intent(out) :: &
          Cdn_atm_ratio_n ! ratio drag coeff / neutral drag coeff
 
       ! optional arguments required for ocean mixed layer
-      real (kind=dbl_kind), intent(inout), optional :: &
+      real (kind=dbl_kind), intent(out), optional :: &
          delt     , & ! potential T difference   (K)
          delq         ! humidity difference      (kg/kg)
 
@@ -884,7 +887,7 @@
          uvel     , & ! x-direction ice speed (m/s)
          vvel         ! y-direction ice speed (m/s)
 
-      real (kind=dbl_kind), intent(inout), optional :: &
+      real (kind=dbl_kind), intent(out), optional :: &
          strx     , & ! x surface stress (N)
          stry         ! y surface stress (N)
 
@@ -894,7 +897,7 @@
       ! optional arguments for turbulent fluxes (latent and sensible heat)
       ! required if flag = 'turbulent'
 
-      real (kind=dbl_kind), intent(inout), optional :: &
+      real (kind=dbl_kind), intent(out), optional :: &
          Tref     , & ! reference height temperature  (K)
          Qref     , & ! reference height specific humidity (kg/kg)
          shcoef   , & ! transfer coefficient for sensible heat
@@ -909,7 +912,7 @@
       real (kind=dbl_kind), intent(in), dimension(:), optional :: &
          Qa_iso       ! specific isotopic humidity (kg/kg)
 
-      real (kind=dbl_kind), intent(inout), dimension(:), optional :: &
+      real (kind=dbl_kind), intent(out), dimension(:), optional :: &
          Qref_iso     ! reference specific isotopic humidity (kg/kg)
 
 !autodocument_end
@@ -987,12 +990,6 @@
 
       l_delt = c0
       l_delq = c0
-      if (present(delt)) then
-         l_delt = delt
-      endif
-      if (present(delq)) then
-         l_delq = delq
-      endif
 
       Cdn_atm_ratio_n = c1
 
@@ -1003,7 +1000,7 @@
                                    strx,     stry,     &
                                    Tsf,      potT,     &
                                    Qa,                 &
-                                   delt,     delq,     &
+                                   l_delt,   l_delq,   &
                                    lhcoef,   shcoef    )
          if (icepack_warnings_aborted(subname)) return
       else

@@ -1267,8 +1267,8 @@
                                             zlvl    = zlvl(i),        &
                                             Qa      = Qa(i),          &
                                             rhoa    = rhoa(i),        &
-                                            strax   = strairx_ocn(i), &
-                                            stray   = strairy_ocn(i), &
+                                            strx    = strairx_ocn(i), &
+                                            stry    = strairy_ocn(i), &
                                             Tref    = Tref_ocn(i),    &
                                             Qref    = Qref_ocn(i),    &
                                             delt    = delt(i),        &

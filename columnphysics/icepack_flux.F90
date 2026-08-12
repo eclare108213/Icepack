@@ -30,7 +30,7 @@
 
       subroutine merge_fluxes (aicen,                &
                                flw, &
-                               strairxn, strairyn,   &
+                               straxn,   strayn,     &
                                Cdn_atm_ratio_n,      &
                                fsurfn,   fcondtopn,  &
                                fcondbotn,            &
@@ -82,8 +82,8 @@
       ! single category fluxes
       real (kind=dbl_kind), optional, intent(in) :: &
           flw     , & ! downward longwave flux          (W/m**2)
-          strairxn, & ! air/ice zonal  strss,           (N/m**2)
-          strairyn, & ! air/ice merdnl strss,           (N/m**2)
+          straxn  , & ! air/ice zonal  strss,           (N/m**2)
+          strayn  , & ! air/ice merdnl strss,           (N/m**2)
           Cdn_atm_ratio_n, & ! ratio of total drag over neutral drag
           fsurfn  , & ! net heat flux to top surface    (W/m**2)
           fcondtopn,& ! downward cond flux at top sfc   (W/m**2)
@@ -187,10 +187,10 @@
 
       ! atmo fluxes
 
-      if (present(strairxn) .and. present(strairxT)) &
-         strairxT   = strairxT + strairxn  * aicen
-      if (present(strairyn) .and. present(strairyT)) &
-         strairyT   = strairyT + strairyn  * aicen
+      if (present(straxn) .and. present(strairxT)) &
+         strairxT   = strairxT + straxn  * aicen
+      if (present(strayn) .and. present(strairyT)) &
+         strairyT   = strairyT + strayn  * aicen
       if (present(Cdn_atm_ratio_n) .and. present(Cdn_atm_ratio)) &
          Cdn_atm_ratio = Cdn_atm_ratio + &
                          Cdn_atm_ratio_n   * aicen

@@ -58,7 +58,7 @@
                                       uatm,     vatm,     &
                                       wind,     zlvl,     &
                                       Qa,       rhoa,     &
-                                      strax,    stray,    &
+                                      strx,     stry,     &
                                       Tref,     Qref,     &
                                       delt,     delq,     &
                                       lhcoef,   shcoef,   &
@@ -98,8 +98,8 @@
          Cdn_atm_ratio_n ! ratio drag coeff / neutral drag coeff
 
       real (kind=dbl_kind), intent(out), optional :: &
-         strax    , & ! x-direction air stress on ice surface (N/m^2)
-         stray        ! y-direction air stress on ice surface (N/m^2)
+         strx     , & ! x-direction air stress on ice surface (N/m^2)
+         stry         ! y-direction air stress on ice surface (N/m^2)
 
       real (kind=dbl_kind), intent(out), optional :: &
          Tref     , & ! reference height temperature  (K)
@@ -308,8 +308,8 @@
       if (calc_strair .and. (trim(flag)=='momentum' .or. trim(flag)=='all')) then
 
          ! initialize
-         strax = c0
-         stray = c0
+         strx = c0
+         stry = c0
 
          if (highfreq .and. sfctype(1:3)=='ice') then
 
@@ -317,15 +317,15 @@
             ! momentum flux for high frequency coupling (RASM/CESM)
             !------------------------------------------------------------
             ! tau = rhoa * rd * rd
-            ! strax = tau * |Uatm-U| * (uatm-u)
-            ! stray = tau * |Uatm-U| * (vatm-v)
+            ! strx = tau * |Uatm-U| * (uatm-u)
+            ! stry = tau * |Uatm-U| * (vatm-v)
             !------------------------------------------------------------
 
             tau = rhoa * rd * rd ! not the stress at zlvl
 
             ! high frequency momentum coupling following Roberts et al. (2014)
-            strax = tau * sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * (uatm-uvel)
-            stray = tau * sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * (vatm-vvel)
+            strx = tau * sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * (uatm-uvel)
+            stry = tau * sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * (vatm-vvel)
 
          else
 
@@ -333,13 +333,13 @@
             ! momentum flux
             !------------------------------------------------------------
             ! tau = rhoa * ustar * ustar
-            ! strax = tau * uatm / vmag
-            ! stray = tau * vatm / vmag
+            ! strx = tau * uatm / vmag
+            ! stry = tau * vatm / vmag
             !------------------------------------------------------------
 
             tau = rhoa * ustar * rd ! not the stress at zlvl
-            strax = tau * uatm
-            stray = tau * vatm
+            strx = tau * uatm
+            stry = tau * vatm
 
          endif
 
@@ -424,7 +424,7 @@
       subroutine atmo_boundary_const (sfctype,  calc_strair, &
                                       uatm,     vatm,     &
                                       wind,     rhoa,     &
-                                      strax,    stray,    &
+                                      strx,     stry,     &
                                       Tsf,      potT,     &
                                       Qa,                 &
                                       delt,     delq,     &
@@ -446,8 +446,8 @@
          rhoa         ! air density (kg/m^3)
 
       real (kind=dbl_kind), intent(inout):: &
-         strax    , & ! x surface stress (N)
-         stray        ! y surface stress (N)
+         strx     , & ! x surface stress (N)
+         stry         ! y surface stress (N)
 
       real (kind=dbl_kind), intent(out) :: &
          delt     , & ! potential T difference   (K)
@@ -477,8 +477,8 @@
 
       if (calc_strair) then
 
-         strax = c0
-         stray = c0
+         strx = c0
+         stry = c0
 
       !------------------------------------------------------------
       ! momentum flux
@@ -486,8 +486,8 @@
          tau = rhoa * 0.0012_dbl_kind * wind
 !AOMIP         tau = rhoa * (1.10_dbl_kind + c4*p01*wind) &
 !AOMIP                         * wind * p001
-         strax = tau * uatm
-         stray = tau * vatm
+         strx = tau * uatm
+         stry = tau * vatm
 
       endif                     ! calc_strair
 
@@ -856,7 +856,7 @@
                                      Qa,          rhoa,          &
                                      Cdn_atm,                    &
                                      Cdn_atm_ratio_n,            &
-                                     strax,       stray,         &
+                                     strx,        stry,          &
                                      Tref,        Qref,          &
                                      delt,        delq,          &
                                      lhcoef,      shcoef,        &
@@ -902,8 +902,8 @@
          vvel         ! y-direction ice speed (m/s)
 
       real (kind=dbl_kind), intent(out), optional :: &
-         strax    , & ! x surface stress (N)
-         stray        ! y surface stress (N)
+         strx     , & ! x surface stress (N)
+         stry         ! y surface stress (N)
 
       real (kind=dbl_kind), intent(out), optional :: &
          Uref         ! reference height wind speed (m/s)
@@ -949,7 +949,7 @@
       !------------------------------------------------------------
 
       if (trim(atmbndy) == 'constant') then
-         if (.not.(present(strax).and.present(stray)) &
+         if (.not.(present(strx).and.present(stry)) &
              .and.(present(delt).and.present(delq)) &
              .and.(present(lhcoef).and.present(shcoef))) then
             call icepack_warnings_add(subname//' error in argument, atmbndy=constant')
@@ -985,7 +985,7 @@
       endif
 
       if (trim(l_flag) == 'all' .or. trim(l_flag) == 'momentum') then
-         if (.not.(present(strax).and.present(stray))) then
+         if (.not.(present(strx).and.present(stry))) then
             call icepack_warnings_add(subname//' error in argument, atmbndy flag=momentum')
             call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
             return
@@ -1011,7 +1011,7 @@
          call atmo_boundary_const (sfctype,  calc_strair, &
                                    uatm,     vatm,     &
                                    wind,     rhoa,     &
-                                   strax,    stray,    &
+                                   strx,     stry,     &
                                    Tsf,      potT,     &
                                    Qa,                 &
                                    l_delt,   l_delq,   &
@@ -1030,8 +1030,8 @@
                                    zlvl        = zlvl,        &
                                    Qa          = Qa,          &
                                    rhoa        = rhoa,        &
-                                   strax       = strax,       &
-                                   stray       = stray,       &
+                                   strx        = strx,        &
+                                   stry        = stry,        &
                                    Tref        = Tref,        &
                                    Qref        = Qref,        &
                                    delt        = l_delt,      &
@@ -1080,6 +1080,7 @@
                                      wind,        zlvl,          &
                                      Qa,          rhoa,          &
                                      Cdn_atm,     Cdn_atm_ratio, &
+                                     strax,       stray,         &
                                      strairxT,    strairyT,      &
                                      uvel,        vvel,          &
                                      Uref                        )
@@ -1098,7 +1099,9 @@
          wind     , & ! wind speed (m/s)
          zlvl     , & ! atm level height for momentum (m)
          Qa       , & ! specific humidity (kg/kg)
-         rhoa         ! air density (kg/m^3)
+         rhoa     , & ! air density (kg/m^3)
+         strax    , & ! wind stress components from data (N/m^2)
+         stray
 
       real (kind=dbl_kind), intent(inout) :: &
          strairxT , & ! stress on ice by air, x-direction
@@ -1134,6 +1137,7 @@
 
       character(len=*),parameter :: subname='(icepack_wind_stress)'
 !   print*,'Entered icepack_wind_stress'
+
       !------------------------------------------------------------
       ! Check optional arguments
       !------------------------------------------------------------
@@ -1190,6 +1194,8 @@
 !         print*,n,'Tsfcn ',Tsfcn(n)
 !   print*,n,'Entering atmo_boundary_layer from icepack_wind_stress'
 
+         if (calc_strair) then
+
          call atmo_boundary_layer (sfctype = sfctype,         &
                            flag            = 'momentum',      &
                            calc_strair     = calc_strair,     &
@@ -1202,8 +1208,8 @@
                            zlvl            = zlvl,            &
                            Qa              = Qa,              &
                            rhoa            = rhoa,            &
-                           strax           = straxn,          &
-                           stray           = strayn,          &
+                           strx            = straxn,           &
+                           stry            = strayn,          &
                            Cdn_atm         = Cdn_atm,         &
                            Cdn_atm_ratio_n = Cdn_atm_ratio_n, &
                            uvel            = l_uvel,          &
@@ -1211,13 +1217,26 @@
                            Uref            = Urefn)
          if (icepack_warnings_aborted(subname)) return
 
+         else ! not calc_strair
+#ifndef CICE_IN_NEMO
+            ! Set to data values (on T points)
+            straxn = strax
+            strayn = stray
+#else
+            ! NEMO wind stress is supplied on u grid, multipied
+            ! by ice concentration and set directly in evp, so
+            ! strairxT/yT = 0. Zero u-components here for safety.
+            straxn = c0
+            strayn = c0
+#endif
+         endif
       !------------------------------------------------------------
       ! Merge wind stress across ice thickness categories
       !------------------------------------------------------------
 
          call merge_fluxes (aicen           = aicen(n),        &
-                            strairxn        = straxn,          &
-                            strairyn        = strayn,          &
+                            straxn          = straxn,          &
+                            strayn          = strayn,          &
                             strairxT        = strairxT,        &
                             strairyT        = strairyT,        &
                             Cdn_atm_ratio_n = Cdn_atm_ratio_n, &

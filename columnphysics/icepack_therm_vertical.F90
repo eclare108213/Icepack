@@ -2503,8 +2503,8 @@
          freshn      , & ! flux of water, ice to ocean     (kg/m^2/s)
          fsaltn      , & ! flux of salt, ice to ocean      (kg/m^2/s)
          fhocnn      , & ! fbot corrected for leftover energy (W/m^2)
-         strairxn    , & ! air/ice zonal  stress,             (N/m^2)
-         strairyn    , & ! air/ice meridional stress,         (N/m^2)
+         straxn      , & ! air/ice zonal  stress,             (N/m^2)
+         strayn      , & ! air/ice meridional stress,         (N/m^2)
          Cdn_atm_ratio_n, & ! drag coefficient ratio
          Trefn       , & ! air tmp reference level                (K)
          Urefn       , & ! air speed reference level            (m/s)
@@ -2827,8 +2827,8 @@
                                  rhoa            = rhoa,            &
                                  Cdn_atm         = Cdn_atm,         &
                                  Cdn_atm_ratio_n = Cdn_atm_ratio_n, &
-                                 strax           = strairxn,        &
-                                 stray           = strairyn,        &
+                                 strx            = straxn,          &
+                                 stry            = strayn,          &
                                  uvel            = uvel,            &
                                  vvel            = vvel,            &
                                  zlvs            = zlvs,            &
@@ -2840,21 +2840,21 @@
                else ! not calc_strair
 #ifndef CICE_IN_NEMO
                   ! Set to data values (on T points)
-                  strairxn = strax
-                  strairyn = stray
+                  straxn = strax
+                  strayn = stray
 #else
                   ! NEMO wind stress is supplied on u grid, multipied
                   ! by ice concentration and set directly in evp, so
                   ! strairxT/yT = 0. Zero u-components here for safety.
-                  strairxn = c0
-                  strairyn = c0
+                  straxn = c0
+                  strayn = c0
 #endif
                endif
 
                ! Merge wind stress across ice thickness categories
                call merge_fluxes (aicen           = aicen_init(n),   &
-                                  strairxn        = strairxn,        &
-                                  strairyn        = strairyn,        &
+                                  straxn          = straxn,          &
+                                  strayn          = strayn,          &
                                   strairxT        = strairxT,        &
                                   strairyT        = strairyT,        &
                                   Cdn_atm_ratio_n = Cdn_atm_ratio_n, &
@@ -3142,8 +3142,6 @@
 
             call merge_fluxes (aicen=aicen_init(n),            &
                                flw=flw, &
-!                               strairxn=strairxn, strairyn=strairyn,&
-!                               Cdn_atm_ratio_n=Cdn_atm_ratio_n,     &
                                fsurfn=fsurfn(n), fcondtopn=fcondtopn(n),&
                                fcondbotn=fcondbotn(n),              &
                                fsensn=fsensn(n),  flatn=flatn(n),   &
@@ -3162,8 +3160,6 @@
                                fswthrun_uvrdf=l_fswthrun_uvrdf,     &
                                fswthrun_pardr=l_fswthrun_pardr,     &
                                fswthrun_pardf=l_fswthrun_pardf,     &
-!                               strairxT=strairxT, strairyT=strairyT,&
-!                               Cdn_atm_ratio=Cdn_atm_ratio,         &
                                fsurf=fsurf,       fcondtop=fcondtop,&
                                fcondbot=fcondbot,                   &
                                fsens=fsens,       flat=flat,        &

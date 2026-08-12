@@ -100,6 +100,7 @@
       use icepack_zbgc , only: icepack_load_ocean_bio_array
 
       use icepack_atmo , only: icepack_atm_boundary
+      use icepack_atmo , only: icepack_wind_stress
       use icepack_ocean, only: icepack_ocn_mixed_layer
 
       use icepack_orbital       , only: icepack_init_orbit

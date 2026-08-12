@@ -2772,79 +2772,98 @@
 
          if (aicen_init(n) > puny) then
 
-            if (calc_Tsfc .or. calc_strair) then
+            if (calc_Tsfc) then
 
       !-----------------------------------------------------------------
       ! Atmosphere boundary layer calculation; compute coefficients
       ! for sensible and latent heat fluxes.
-      !
-      ! NOTE: The wind stress is computed here for later use if
-      !       calc_strair = .true.   Otherwise, the wind stress
-      !       components are set to the data values.
       !-----------------------------------------------------------------
 
                ! turbulent flux coefficients
-               call icepack_atm_boundary(sfctype  = 'ice',                &
-                                         Tsf      = Tsfc(n),              &
-                                         potT     = potT,                 &
-                                         uatm     = uatm,                 &
-                                         vatm     = vatm,                 &
-                                         wind     = wind,                 &
-                                         zlvl     = zlvl,                 &
-                                         Qa       = Qa,                   &
-                                         rhoa     = rhoa,                 &
-                                         Cdn_atm  = Cdn_atm,              &
-                                         Cdn_atm_ratio_n = Cdn_atm_ratio, &
-                                         Tref     = Trefn,                &
-                                         Qref     = Qrefn,                &
-                                         lhcoef   = lhcoef,               &
-                                         shcoef   = shcoef,               &
-                                         Qa_iso   = Qa_iso,               &
-                                         Qref_iso = Qrefn_iso,            &
-                                         uvel     = uvel,                 &
-                                         vvel     = vvel,                 &
-                                         zlvs     = zlvs,                 &
-                                         flag     = 'turbulent')
+               call icepack_atm_boundary(sfctype = 'ice',           &
+                                 Tsf             = Tsfc(n),         &
+                                 potT            = potT,            &
+                                 uatm            = uatm,            &
+                                 vatm            = vatm,            &
+                                 wind            = wind,            &
+                                 zlvl            = zlvl,            &
+                                 Qa              = Qa,              &
+                                 rhoa            = rhoa,            &
+                                 Cdn_atm         = Cdn_atm,         &
+                                 Cdn_atm_ratio_n = Cdn_atm_ratio_n, &
+                                 Tref            = Trefn,           &
+                                 Qref            = Qrefn,           &
+                                 lhcoef          = lhcoef,          &
+                                 shcoef          = shcoef,          &
+                                 Qa_iso          = Qa_iso,          &
+                                 Qref_iso        = Qrefn_iso,       &
+                                 uvel            = uvel,            &
+                                 vvel            = vvel,            &
+                                 zlvs            = zlvs,            &
+                                 flag            = 'turbulent')
 
 ! echmod - namelist option not yet implemented
-!               if (trim(atm_boundary) == 'separate') then
-               ! wind stress
-               call icepack_atm_boundary(sfctype  = 'ice',                &
-                                         Tsf      = Tsfc(n),              &
-                                         potT     = potT,                 &
-                                         uatm     = uatm,                 &
-                                         vatm     = vatm,                 &
-                                         wind     = wind,                 &
-                                         zlvl     = zlvl,                 &
-                                         Qa       = Qa,                   &
-                                         rhoa     = rhoa,                 &
-                                         Cdn_atm  = Cdn_atm,              &
-                                         Cdn_atm_ratio_n = Cdn_atm_ratio, &
-                                         strx     = strairxn,             &
-                                         stry     = strairyn,             &
-                                         uvel     = uvel,                 &
-                                         vvel     = vvel,                 &
-                                         Uref     = Urefn,                &
-                                         zlvs     = zlvs,                 &
-                                         flag     = 'momentum')
+!               if (trim(atm_boundary) /= 'separate') then
+!!#if 1==0
+               if (calc_strair) then
+      !-----------------------------------------------------------------
+      ! Atmosphere boundary layer calculation; compute wind stress
+      ! if calc_strair = .true. Otherwise, the wind stress components
+      ! are set to the data values.
+      !
+      ! NOTE: The wind stress is computed here for later use by default.
+      ! Work is underway to alternatively compute it immediately prior
+      ! to the dynamics, after thermo changes to the ITD are complete.
+      !-----------------------------------------------------------------
+
+               call icepack_atm_boundary(sfctype = 'ice',           &
+                                 Tsf             = Tsfc(n),         &
+                                 potT            = potT,            &
+                                 uatm            = uatm,            &
+                                 vatm            = vatm,            &
+                                 wind            = wind,            &
+                                 zlvl            = zlvl,            &
+                                 Qa              = Qa,              &
+                                 rhoa            = rhoa,            &
+                                 Cdn_atm         = Cdn_atm,         &
+                                 Cdn_atm_ratio_n = Cdn_atm_ratio_n, &
+                                 strax           = strairxn,        &
+                                 stray           = strairyn,        &
+                                 uvel            = uvel,            &
+                                 vvel            = vvel,            &
+                                 zlvs            = zlvs,            &
+                                 Uref            = Urefn,           &
+                                 flag            = 'momentum')
                if (icepack_warnings_aborted(subname)) return
 
-!               endif   ! atm_boundary
-            endif   ! calc_Tsfc or calc_strair
-
-            if (.not.(calc_strair)) then
+!echmod: copy this if block into icepack_wind_stress
+               else ! not calc_strair
 #ifndef CICE_IN_NEMO
-               ! Set to data values (on T points)
-               strairxn = strax
-               strairyn = stray
+                  ! Set to data values (on T points)
+                  strairxn = strax
+                  strairyn = stray
 #else
-               ! NEMO wind stress is supplied on u grid, multipied
-               ! by ice concentration and set directly in evp, so
-               ! strairxT/yT = 0. Zero u-components here for safety.
-               strairxn = c0
-               strairyn = c0
+                  ! NEMO wind stress is supplied on u grid, multipied
+                  ! by ice concentration and set directly in evp, so
+                  ! strairxT/yT = 0. Zero u-components here for safety.
+                  strairxn = c0
+                  strairyn = c0
 #endif
-            endif
+               endif
+
+               ! Merge wind stress across ice thickness categories
+               call merge_fluxes (aicen           = aicen_init(n),   &
+                                  strairxn        = strairxn,        &
+                                  strairyn        = strairyn,        &
+                                  strairxT        = strairxT,        &
+                                  strairyT        = strairyT,        &
+                                  Cdn_atm_ratio_n = Cdn_atm_ratio_n, &
+                                  Cdn_atm_ratio   = Cdn_atm_ratio,   &
+                                  Urefn           = Urefn,           &
+                                  Uref            = Uref)
+               if (icepack_warnings_aborted(subname)) return
+!            endif   ! atm_boundary
+            endif ! calc_Tsfc
 
       !-----------------------------------------------------------------
       ! Update ice age
@@ -3123,8 +3142,8 @@
 
             call merge_fluxes (aicen=aicen_init(n),            &
                                flw=flw, &
-                               strairxn=strairxn, strairyn=strairyn,&
-                               Cdn_atm_ratio_n=Cdn_atm_ratio_n,     &
+!                               strairxn=strairxn, strairyn=strairyn,&
+!                               Cdn_atm_ratio_n=Cdn_atm_ratio_n,     &
                                fsurfn=fsurfn(n), fcondtopn=fcondtopn(n),&
                                fcondbotn=fcondbotn(n),              &
                                fsensn=fsensn(n),  flatn=flatn(n),   &
@@ -3143,8 +3162,8 @@
                                fswthrun_uvrdf=l_fswthrun_uvrdf,     &
                                fswthrun_pardr=l_fswthrun_pardr,     &
                                fswthrun_pardf=l_fswthrun_pardf,     &
-                               strairxT=strairxT, strairyT=strairyT,&
-                               Cdn_atm_ratio=Cdn_atm_ratio,         &
+!                               strairxT=strairxT, strairyT=strairyT,&
+!                               Cdn_atm_ratio=Cdn_atm_ratio,         &
                                fsurf=fsurf,       fcondtop=fcondtop,&
                                fcondbot=fcondbot,                   &
                                fsens=fsens,       flat=flat,        &
@@ -3171,7 +3190,7 @@
                                congel=congel,     snoice=snoice,    &
                                meltsliq=l_meltsliq,                 &
                                meltsliqn=l_meltsliqn(n),            &
-                               Uref=Uref,         Urefn=Urefn,      &
+!                               Uref=Uref,         Urefn=Urefn,      &
                                Qref_iso=Qref_iso,                   &
                                Qrefn_iso=Qrefn_iso,                 &
                                fiso_ocn=fiso_ocn,                   &

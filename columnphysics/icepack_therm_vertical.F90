@@ -2804,7 +2804,8 @@
 
 ! echmod - namelist option not yet implemented
 !               if (trim(atm_boundary) /= 'separate') then
-!!#if 1==0
+#if 1==0
+
                if (calc_strair) then
       !-----------------------------------------------------------------
       ! Atmosphere boundary layer calculation; compute wind stress
@@ -2816,7 +2817,7 @@
       ! to the dynamics, after thermo changes to the ITD are complete.
       !-----------------------------------------------------------------
 
-               call icepack_atm_boundary(sfctype = 'ice',           &
+         call icepack_atm_boundary(sfctype = 'ice',           &
                                  Tsf             = Tsfc(n),         &
                                  potT            = potT,            &
                                  uatm            = uatm,            &
@@ -2836,7 +2837,6 @@
                                  flag            = 'momentum')
                if (icepack_warnings_aborted(subname)) return
 
-!echmod: copy this if block into icepack_wind_stress
                else ! not calc_strair
 #ifndef CICE_IN_NEMO
                   ! Set to data values (on T points)
@@ -2862,6 +2862,7 @@
                                   Urefn           = Urefn,           &
                                   Uref            = Uref)
                if (icepack_warnings_aborted(subname)) return
+#endif
 !            endif   ! atm_boundary
             endif ! calc_Tsfc
 

@@ -77,6 +77,10 @@
          calc_strair, &  ! if true, calculate wind stress components
          formdrag        ! if true, calculate form drag
 
+      character (len=*), intent(in) :: &
+         flag        ! calculate coefficients for wind stress ('momentum')
+                     ! or sensible and latent heat fluxes ('turbulent')
+
       real (kind=dbl_kind), intent(in) :: &
          Tsf      , & ! surface temperature of ice or ocean
          potT     , & ! air potential temperature  (K)
@@ -87,45 +91,33 @@
          Qa       , & ! specific humidity (kg/kg)
          rhoa         ! air density (kg/m^3)
 
-      real (kind=dbl_kind), intent(out), optional :: &
-         delt     , & ! potential T difference   (K)
-         delq         ! humidity difference      (kg/kg)
-
       real (kind=dbl_kind), intent(inout) :: &
          Cdn_atm      ! neutral drag coefficient
 
       real (kind=dbl_kind), intent(out) :: &
          Cdn_atm_ratio_n ! ratio drag coeff / neutral drag coeff
 
-      real (kind=dbl_kind), intent(out), optional :: &
-         strx     , & ! x-direction air stress on ice surface (N/m^2)
-         stry         ! y-direction air stress on ice surface (N/m^2)
+      real (kind=dbl_kind), intent(in), optional :: &
+         uvel     , & ! x-direction ice speed (m/s)
+         vvel     , & ! y-direction ice speed (m/s)
+         zlvs         ! atm level height (scalar quantities) (m)
 
       real (kind=dbl_kind), intent(out), optional :: &
+         delt     , & ! potential T difference   (K)
+         delq     , & ! humidity difference      (kg/kg)
          Tref     , & ! reference height temperature  (K)
          Qref     , & ! reference height specific humidity (kg/kg)
          shcoef   , & ! transfer coefficient for sensible heat
-         lhcoef       ! transfer coefficient for latent heat
+         lhcoef   , & ! transfer coefficient for latent heat
+         strx     , & ! x-direction air stress on ice surface (N/m^2)
+         stry     , & ! y-direction air stress on ice surface (N/m^2)
+         Uref         ! reference height wind speed (m/s)
 
       real (kind=dbl_kind), intent(in), dimension(:), optional :: &
          Qa_iso       ! specific isotopic humidity (kg/kg)
 
       real (kind=dbl_kind), intent(out), dimension(:), optional :: &
          Qref_iso     ! reference specific isotopic humidity (kg/kg)
-
-      real (kind=dbl_kind), intent(in), optional :: &
-         uvel     , & ! x-direction ice speed (m/s)
-         vvel         ! y-direction ice speed (m/s)
-
-      real (kind=dbl_kind), intent(out), optional :: &
-         Uref         ! reference height wind speed (m/s)
-
-      real (kind=dbl_kind), intent(in), optional :: &
-         zlvs        ! atm level height (scalar quantities) (m)
-
-      character (len=*), intent(in) :: &
-         flag        ! calculate coefficients for wind stress ('momentum')
-                     ! or sensible and latent heat fluxes ('turbulent')
 
       ! local variables
 
@@ -173,7 +165,7 @@
          zTrf  = c2     ! reference height for air temp (m)
 
       real (kind=dbl_kind) :: &
-         l_delt, l_delq ! optional variables
+         l_delt, l_delq, l_strx, l_stry ! optional variables
 
       character(len=*),parameter :: subname='(atmo_boundary_layer)'
 
@@ -193,6 +185,8 @@
 
       l_delt = c0
       l_delq = c0
+      l_strx = c0
+      l_stry = c0
 
       !------------------------------------------------------------
       ! Compute turbulent flux coefficients, wind stress, and
@@ -307,10 +301,6 @@
 
       if (calc_strair .and. (trim(flag)=='momentum' .or. trim(flag)=='all')) then
 
-         ! initialize
-         strx = c0
-         stry = c0
-
          if (highfreq .and. sfctype(1:3)=='ice') then
 
             !------------------------------------------------------------
@@ -324,8 +314,8 @@
             tau = rhoa * rd * rd ! not the stress at zlvl
 
             ! high frequency momentum coupling following Roberts et al. (2014)
-            strx = tau * sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * (uatm-uvel)
-            stry = tau * sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * (vatm-vvel)
+            l_strx = tau * sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * (uatm-uvel)
+            l_stry = tau * sqrt((uatm-uvel)**2 + (vatm-vvel)**2) * (vatm-vvel)
 
          else
 
@@ -338,8 +328,8 @@
             !------------------------------------------------------------
 
             tau = rhoa * ustar * rd ! not the stress at zlvl
-            strx = tau * uatm
-            stry = tau * vatm
+            l_strx = tau * uatm
+            l_stry = tau * vatm
 
          endif
 
@@ -410,6 +400,12 @@
       endif
       if (present(delq)) then
          delq = l_delq
+      endif
+      if (present(strx)) then
+         strx = l_strx
+      endif
+      if (present(stry)) then
+         stry = l_stry
       endif
 
       end subroutine atmo_boundary_layer
@@ -1136,7 +1132,6 @@
          flag        ! calculate coefficients for wind stress ('momentum')
 
       character(len=*),parameter :: subname='(icepack_wind_stress)'
-!   print*,'Entered icepack_wind_stress'
 
       !------------------------------------------------------------
       ! Check optional arguments
@@ -1164,35 +1159,17 @@
          l_vvel = vvel
       endif
 
-      if (aicen(n) > puny) then
-
       !------------------------------------------------------------
       ! Compute wind stress over each ice thickness category
       !------------------------------------------------------------
 
       do n = 1, ncat
 
+         if (aicen(n) > puny) then
          straxn          = c0
          strayn          = c0
          Urefn           = c0
          Cdn_atm_ratio_n = c1
-
-!         print*,n,'potT ',potT
-!         print*,n,'uatm ',uatm
-!         print*,n,'vatm ',vatm
-!         print*,n,'wind ',wind
-!         print*,n,'zlvl ',zlvl
-!         print*,n,'Qa ',Qa
-!         print*,n,'rhoa ',rhoa
-!         print*,n,'straxn ',straxn
-!         print*,n,'strayn ',strayn
-!         print*,n,'Cdn_atm ',Cdn_atm
-!         print*,n,'Cdn_atm_ratio_n ',Cdn_atm_ratio_n
-!         print*,n,'l_uvel ',l_uvel
-!         print*,n,'l_vvel ',l_vvel
-!         print*,n,'Urefn ',Urefn
-!         print*,n,'Tsfcn ',Tsfcn(n)
-!   print*,n,'Entering atmo_boundary_layer from icepack_wind_stress'
 
          if (calc_strair) then
 
@@ -1230,6 +1207,7 @@
             strayn = c0
 #endif
          endif
+
       !------------------------------------------------------------
       ! Merge wind stress across ice thickness categories
       !------------------------------------------------------------
@@ -1249,8 +1227,8 @@
             Uref = l_Uref
          endif
 
-      enddo ! n
       endif ! aicen > puny
+      enddo ! n
 
       end subroutine icepack_wind_stress
 

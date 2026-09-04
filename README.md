@@ -15,7 +15,7 @@ Icepack is included in CICE as a Git submodule.  Because Icepack is a submodule 
 ## Getting help
 The first point of contact with the CICE Consortium is the Consortium Community [Forum][forum]. This forum is monitored by Consortium members and is also open to the whole community. **Please do not use our issue tracker for general support questions.**
 
-[forum]: https://xenforo.cgd.ucar.edu/cesm/forums/cice-consortium.146/
+[forum]: https://bb.cgd.ucar.edu/cesm/forums/cice-consortium.146/
 
 ## Contributing
 If you expect to make any changes to the code, we recommend that you first fork the Icepack repository.
@@ -33,7 +33,7 @@ Head over to our [Contributing][contributing] guide to learn more about how you 
 
    Numbered Icepack releases with associated documentation and DOIs. 
    
-* **Consortium Community Forum**: https://xenforo.cgd.ucar.edu/cesm/forums/cice-consortium.146/
+* **Consortium Community Forum**: https://bb.cgd.ucar.edu/cesm/forums/cice-consortium.146/
    
    First point of contact for discussing model development including bugs, diagnostics, and future directions.   
 
